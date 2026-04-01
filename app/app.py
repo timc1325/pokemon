@@ -935,7 +935,6 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         .configure(background=CHART_BG)
         .configure_view(fill=CHART_BG, stroke=None)
         .configure_concat(spacing=6)
-        .configure(padding=8)
     )
 
     st.altair_chart(chart, use_container_width=True)
@@ -946,7 +945,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     )
 
 
-def _live_rates_panel(merged: pd.DataFrame) -> None:
+def render_shiny_rates(merged: pd.DataFrame) -> None:
     col_refresh, col_view, col_filter = st.columns([1, 2, 3])
     with col_refresh:
         if st.button("Refresh", key="refresh_shiny_rates"):
@@ -1002,13 +1001,6 @@ def _live_rates_panel(merged: pd.DataFrame) -> None:
         _render_shiny_rate_bar_chart(filtered)
     else:
         _render_shiny_rate_cards(filtered)
-
-
-# Partial reruns: changing filters here skips reloading the whole app (CSS, sheets, Collection tab),
-# which avoids Altair/Vega image+bar charts flashing for several seconds.
-render_shiny_rates = (
-    st.fragment(_live_rates_panel) if hasattr(st, "fragment") else _live_rates_panel
-)
 
 
 # ---------------------------------------------------------------------------
