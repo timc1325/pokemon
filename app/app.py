@@ -24,7 +24,7 @@ CARDS_PER_PAGE = 80
 
 # Live Rates bar chart: best-odds only, short list for readability
 BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
-BAR_CHART_TOP_N = 20
+BAR_CHART_TOP_N = 42
 # “Large sample” teal: stricter than top quartile — high quantile + floor on n
 BAR_CHART_LARGE_SAMPLE_Q = 0.90
 BAR_CHART_LARGE_SAMPLE_MIN_N = 8_000
@@ -956,6 +956,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
         view_mode = st.radio(
             "View",
             ["Cards", "Bar chart"],
+            index=1,
             horizontal=True,
             label_visibility="collapsed",
             key="shiny_rates_view",
