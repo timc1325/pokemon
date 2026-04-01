@@ -25,6 +25,9 @@ CARDS_PER_PAGE = 80
 # Live Rates bar chart: best-odds only, short list for readability
 BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
 BAR_CHART_TOP_N = 20
+# “Large sample” teal: stricter than top quartile — high quantile + floor on n
+BAR_CHART_LARGE_SAMPLE_Q = 0.90
+BAR_CHART_LARGE_SAMPLE_MIN_N = 8_000
 CHART_BG = "#08080e"
 CHART_GRID = "#ffffff0d"
 CHART_MUTED = "#3d3d52"
@@ -815,9 +818,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
 
     elig = elig.sort_values("shiny_rate_value", ascending=False).head(BAR_CHART_TOP_N)
 
-    thr = float(elig["sample_size"].quantile(0.75))
-    if thr < 1:
-        thr = 1.0
+    q_thr = float(elig["sample_size"].quantile(BAR_CHART_LARGE_SAMPLE_Q))
+    thr = max(q_thr, float(BAR_CHART_LARGE_SAMPLE_MIN_N), 1.0)
 
     chart_df = elig.copy()
     chart_df["bar_label"] = (
@@ -833,13 +835,18 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         {True: hi, False: lo}
     )
 
+    # Vega-Lite: first categories in `sort` sit lower on the y-axis; list rows
+    # from lowest to highest shiny rate so the best odds appear at the top.
+    bar_labels_y_order = (
+        chart_df.sort_values("shiny_rate_value", ascending=True)["bar_label"].tolist()
+    )
+
     row_step = 20
     h = int(max(220, len(chart_df) * row_step + 56))
-    y_sort = alt.EncodingSortField(field="shiny_rate_value", order="descending")
     y_icons = alt.Y(
         "bar_label:N",
         axis=None,
-        sort=y_sort,
+        sort=bar_labels_y_order,
         title=None,
     )
     y_bars = alt.Y(
@@ -853,7 +860,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
             labelLimit=200,
             title=None,
         ),
-        sort=y_sort,
+        sort=bar_labels_y_order,
         title=None,
     )
 
@@ -932,9 +939,10 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
 
     st.altair_chart(chart, use_container_width=True)
     st.caption(
-        f"Showing up to **{BAR_CHART_TOP_N}** species with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** "
-        f"after your filters (**{len(chart_df)}** here). **Teal** = sample size in the top quartile "
-        f"of this short list (n ≥ **{thr:,.0f}**)."
+        f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
+        f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
+        f"**Teal** = heavy sampling: n ≥ **{thr:,.0f}** "
+        f"(max of **{BAR_CHART_LARGE_SAMPLE_Q:.0%}** quantile on this list and **{BAR_CHART_LARGE_SAMPLE_MIN_N:,}**)."
     )
 
 
