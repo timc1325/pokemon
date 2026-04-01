@@ -122,6 +122,12 @@ def inject_css():
         background: rgba(124,92,252,0.1) !important;
         border-radius: 4px !important; color: #9080e0 !important;
     }
+    /* Keep multiselect internal search input invisible */
+    [data-testid="stMultiSelect"] input {
+        background: transparent !important;
+        border: none !important; border-radius: 0 !important;
+        box-shadow: none !important;
+    }
     label { color: #404058 !important; font-size: 11px !important; }
 
     /* ── Checkbox ── */
