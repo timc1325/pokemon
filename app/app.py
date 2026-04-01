@@ -51,6 +51,16 @@ def inject_css():
     st.markdown(
         """
     <style>
+    :root {
+        --bg-main: #08080e;
+        --bg-panel: #11111b;
+        --bg-input: #151523;
+        --text-primary: #d8d8e8;
+        --text-secondary: #a7a7bf;
+        --text-muted: #8a8aa5;
+        --border-soft: rgba(255,255,255,0.07);
+    }
+
     /* ── Hide Streamlit chrome ── */
     #MainMenu, footer, [data-testid="stToolbar"],
     [data-testid="stDecoration"], [data-testid="stStatusWidget"],
@@ -60,28 +70,28 @@ def inject_css():
     /* ── Base ── */
     html, body, [data-testid="stAppViewContainer"],
     [data-testid="stApp"], .main, .stApp {
-        background-color: #08080e !important;
-        color: #c8c8dc !important;
+        background-color: var(--bg-main) !important;
+        color: var(--text-primary) !important;
         font-family: 'Inter', -apple-system, sans-serif !important;
     }
     .block-container { padding: 1.2rem 2rem 1rem; }
 
     /* ── Sidebar ── */
     [data-testid="stSidebar"] > div:first-child {
-        background: #0c0c16 !important;
-        border-right: 1px solid rgba(255,255,255,0.03);
+        background: var(--bg-panel) !important;
+        border-right: 1px solid var(--border-soft);
     }
     [data-testid="stSidebar"] * {
         font-family: 'Inter', sans-serif !important;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
         font-size: 10px !important; font-weight: 600 !important;
-        color: #3a3a52 !important;
+        color: var(--text-secondary) !important;
         letter-spacing: 0.14em; text-transform: uppercase;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
         font-size: 10px !important; font-weight: 600 !important;
-        color: #2a2a40 !important;
+        color: var(--text-secondary) !important;
         letter-spacing: 0.1em; text-transform: uppercase;
     }
     section[data-testid="stSidebar"] hr {
@@ -89,24 +99,24 @@ def inject_css():
         margin: 14px 0;
     }
     [data-testid="stSidebar"] label {
-        color: #404058 !important; font-size: 11px !important;
+        color: var(--text-secondary) !important; font-size: 11px !important;
         font-weight: 500 !important; letter-spacing: 0.02em;
     }
 
     /* ── All inputs dark ── */
     input, textarea {
-        background-color: #10101a !important;
-        border-color: rgba(255,255,255,0.05) !important;
-        color: #b0b0c8 !important;
+        background-color: var(--bg-input) !important;
+        border-color: var(--border-soft) !important;
+        color: var(--text-primary) !important;
         font-family: 'Inter', sans-serif !important;
         border-radius: 8px !important;
         caret-color: #7c5cfc !important;
     }
-    input::placeholder { color: #2a2a3e !important; }
+    input::placeholder { color: var(--text-muted) !important; }
     [data-baseweb="select"] > div {
-        background-color: #10101a !important;
-        border-color: rgba(255,255,255,0.05) !important;
-        color: #b0b0c8 !important;
+        background-color: var(--bg-input) !important;
+        border-color: var(--border-soft) !important;
+        color: var(--text-primary) !important;
         border-radius: 8px !important;
     }
     [data-baseweb="popover"] > div,
@@ -114,13 +124,13 @@ def inject_css():
         background-color: #12121e !important;
         border: 1px solid rgba(255,255,255,0.05) !important;
     }
-    [data-baseweb="menu"] li { color: #9090a8 !important; }
+    [data-baseweb="menu"] li { color: var(--text-primary) !important; }
     [data-baseweb="menu"] li:hover {
         background: rgba(124,92,252,0.08) !important;
     }
     [data-baseweb="tag"] {
         background: rgba(124,92,252,0.1) !important;
-        border-radius: 4px !important; color: #9080e0 !important;
+        border-radius: 4px !important; color: #c5baff !important;
     }
     /* Keep multiselect internal search input invisible */
     [data-testid="stMultiSelect"] input {
@@ -128,14 +138,14 @@ def inject_css():
         border: none !important; border-radius: 0 !important;
         box-shadow: none !important;
     }
-    label { color: #404058 !important; font-size: 11px !important; }
+    label { color: var(--text-secondary) !important; font-size: 11px !important; }
 
     /* ── Checkbox ── */
     [data-testid="stCheckbox"] label span {
-        color: #505068 !important; font-size: 12px !important;
+        color: var(--text-secondary) !important; font-size: 12px !important;
     }
     [data-testid="stCheckbox"] label span[data-testid="stMarkdownContainer"] p {
-        color: #505068 !important;
+        color: var(--text-secondary) !important;
     }
 
     /* ── Tabs → segmented control ── */
@@ -147,7 +157,7 @@ def inject_css():
     }
     .stTabs [data-baseweb="tab"] {
         font-family: 'Inter', sans-serif; font-size: 11px;
-        font-weight: 500; color: #404058; padding: 8px 24px;
+        font-weight: 500; color: var(--text-secondary); padding: 8px 24px;
         background: transparent; letter-spacing: 0.08em;
         text-transform: uppercase; border-radius: 6px;
     }
@@ -162,14 +172,14 @@ def inject_css():
     .stButton > button {
         font-family: 'Inter', sans-serif !important;
         border-radius: 6px; font-size: 11px; font-weight: 500;
-        border: 1px solid rgba(255,255,255,0.05);
-        background: rgba(255,255,255,0.02); color: #505068;
+        border: 1px solid var(--border-soft);
+        background: rgba(255,255,255,0.03); color: var(--text-primary);
         padding: 6px 16px; letter-spacing: 0.02em;
         transition: all 0.2s ease; box-shadow: none !important;
     }
     .stButton > button:hover {
         background: rgba(255,255,255,0.05);
-        border-color: rgba(255,255,255,0.08); color: #a0a0b8;
+        border-color: rgba(255,255,255,0.1); color: #f2f2ff;
     }
     .stButton > button[kind="primary"] {
         background: rgba(124,92,252,0.7); color: #fff;
@@ -182,9 +192,9 @@ def inject_css():
     /* ── Download button ── */
     .stDownloadButton > button {
         font-family: 'Inter', sans-serif !important;
-        background: rgba(255,255,255,0.02) !important;
-        color: #505068 !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
+        background: rgba(255,255,255,0.03) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-soft) !important;
     }
 
     /* ── Form ── */
@@ -225,7 +235,7 @@ def inject_css():
     }
     .pk-id {
         font-family: 'Inter', sans-serif; font-size: 8.5px;
-        color: #2e2e42; margin-top: 1px; font-weight: 500;
+        color: var(--text-muted); margin-top: 1px; font-weight: 500;
     }
     .pk-badges { margin-top: 4px; min-height: 14px; line-height: 1.8; }
     .pk-badge {
@@ -259,12 +269,12 @@ def inject_css():
     }
     .rate-id {
         font-family: 'Inter', sans-serif; font-size: 8.5px;
-        color: #2e2e42; margin-top: 1px;
+        color: var(--text-muted); margin-top: 1px;
     }
     .rate-badges { margin-top: 4px; line-height: 1.8; }
     .rate-sample {
         font-family: 'Inter', sans-serif; font-size: 8px;
-        color: #222236; margin-top: 2px; letter-spacing: 0.02em;
+        color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em;
     }
 
     /* ── Hero stats ── */
@@ -280,21 +290,21 @@ def inject_css():
     }
     .hero-label {
         font-family: 'Inter', sans-serif; font-size: 8px;
-        font-weight: 600; color: #2e2e42; text-transform: uppercase;
+        font-weight: 600; color: var(--text-secondary); text-transform: uppercase;
         letter-spacing: 0.12em; margin-top: 4px;
     }
 
     /* ── Page nav ── */
     .page-info {
         font-family: 'Inter', sans-serif; text-align: center;
-        font-size: 11px; color: #3a3a52; padding: 8px 0;
+        font-size: 11px; color: var(--text-secondary); padding: 8px 0;
         font-weight: 500; letter-spacing: 0.02em;
     }
 
     /* ── Count label ── */
     .count-label {
         font-family: 'Inter', sans-serif; font-size: 11px;
-        color: #3a3a52; padding: 6px 0;
+        color: var(--text-secondary); padding: 6px 0;
     }
     .count-label b { color: #d0d0e4; font-weight: 600; }
 
@@ -307,7 +317,7 @@ def inject_css():
         letter-spacing: -0.02em;
     }
     .brand-sub {
-        font-size: 10px; color: #2e2e42; margin-left: 12px;
+        font-size: 10px; color: var(--text-secondary); margin-left: 12px;
         letter-spacing: 0.12em; text-transform: uppercase;
         font-weight: 500;
     }
@@ -325,8 +335,8 @@ def inject_css():
     /* ── Alerts ── */
     [data-testid="stAlert"] {
         background: rgba(255,255,255,0.02) !important;
-        border: 1px solid rgba(255,255,255,0.03) !important;
-        color: #606078 !important; border-radius: 8px !important;
+        border: 1px solid var(--border-soft) !important;
+        color: var(--text-primary) !important; border-radius: 8px !important;
     }
 
     /* ── Mobile responsive ── */
