@@ -360,7 +360,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
             st.rerun()
     with col_filter:
         shiny_filter_tags = st.multiselect(
-            "Filter", FILTER_TAGS, default=[], key="shiny_rate_filters"
+            "Filter", FILTER_TAGS, default=["Not Shundo"], key="shiny_rate_filters"
         )
 
     rates_df = fetch_shiny_rates()
