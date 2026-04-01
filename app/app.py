@@ -329,6 +329,8 @@ def inject_css():
     .rate-sample {
         font-family: 'Inter', sans-serif; font-size: 8px;
         color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em;
+        display: block; line-height: 1.35;
+        overflow-wrap: anywhere; word-break: break-word;
     }
 
     /* ── Hero stats ── */
@@ -407,6 +409,14 @@ def inject_css():
             flex: 0 0 calc(25% - 3px) !important;
             max-width: calc(25% - 3px) !important;
             min-width: 0 !important;
+            overflow: visible !important;
+        }
+        /* Avoid clipping the bottom of custom HTML cards (e.g. rate n= line) */
+        [data-testid="stHorizontalBlock"]:has(> :nth-child(5)) > [data-testid="stColumn"] > div {
+            overflow: visible !important;
+        }
+        [data-testid="stHorizontalBlock"]:has(> :nth-child(5)) [data-testid="stMarkdownContainer"] {
+            overflow: visible !important;
         }
 
         /* Ultra-compact cards */
@@ -423,16 +433,24 @@ def inject_css():
         .pk-badge { font-size: 6px; padding: 1px 3px; }
 
         .rate-card {
-            padding: 8px 3px 5px; min-height: 80px;
+            padding: 8px 2px 12px; min-height: min-content;
             border-radius: 8px;
+            overflow: visible;
+            box-sizing: border-box;
         }
         .rate-card img { width: 30px; height: 30px; }
         .rate-card:hover { transform: none; box-shadow: none; }
         .rate-card:hover img { transform: none; }
-        .rate-name { font-size: 8px; margin-top: 3px; }
+        .rate-name { font-size: 8px; margin-top: 3px; line-height: 1.25; }
         .rate-id { font-size: 7px; }
-        .rate-badges { margin-top: 2px; line-height: 1.5; }
-        .rate-sample { font-size: 6px; }
+        .rate-badges {
+            margin-top: 2px; line-height: 1.45;
+            max-width: 100%; overflow-wrap: anywhere;
+        }
+        .rate-sample {
+            font-size: 6px; margin-top: 4px; padding-bottom: 2px;
+            line-height: 1.35;
+        }
 
         /* Compact stats */
         .hero-stats { gap: 20px; padding: 4px 0 8px; }
