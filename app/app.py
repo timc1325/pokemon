@@ -45,109 +45,283 @@ GSHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 def inject_css():
     st.markdown(
+        '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
         """
     <style>
+    /* ── Hide Streamlit chrome ── */
+    #MainMenu, footer, [data-testid="stToolbar"],
+    [data-testid="stDecoration"], [data-testid="stStatusWidget"],
+    .viewerBadge_container__r5tak { display: none !important; }
+    header[data-testid="stHeader"] { background: transparent !important; }
+
     /* ── Base ── */
-    .block-container { padding-top: 1.5rem; padding-bottom: 1rem; }
+    html, body, [data-testid="stAppViewContainer"],
+    [data-testid="stApp"], .main, .stApp {
+        background-color: #08080e !important;
+        color: #c8c8dc !important;
+        font-family: 'Inter', -apple-system, sans-serif !important;
+    }
+    .block-container { padding: 1.2rem 2rem 1rem; }
 
     /* ── Sidebar ── */
-    [data-testid="stSidebar"] { background: #f9fafb; }
+    [data-testid="stSidebar"] > div:first-child {
+        background: #0c0c16 !important;
+        border-right: 1px solid rgba(255,255,255,0.03);
+    }
+    [data-testid="stSidebar"] * {
+        font-family: 'Inter', sans-serif !important;
+    }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
-        font-size: 13px; font-weight: 700; color: #374151;
-        letter-spacing: 0.06em; text-transform: uppercase;
+        font-size: 10px !important; font-weight: 600 !important;
+        color: #3a3a52 !important;
+        letter-spacing: 0.14em; text-transform: uppercase;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        font-size: 11px; font-weight: 700; color: #9ca3af;
-        text-transform: uppercase; letter-spacing: 0.06em;
+        font-size: 10px !important; font-weight: 600 !important;
+        color: #2a2a40 !important;
+        letter-spacing: 0.1em; text-transform: uppercase;
     }
     section[data-testid="stSidebar"] hr {
-        border: none; border-top: 1px solid #f0f0f0; margin: 14px 0;
+        border: none; border-top: 1px solid rgba(255,255,255,0.03);
+        margin: 14px 0;
+    }
+    [data-testid="stSidebar"] label {
+        color: #404058 !important; font-size: 11px !important;
+        font-weight: 500 !important; letter-spacing: 0.02em;
     }
 
-    /* ── Tabs ── */
+    /* ── All inputs dark ── */
+    input, textarea {
+        background-color: #10101a !important;
+        border-color: rgba(255,255,255,0.05) !important;
+        color: #b0b0c8 !important;
+        font-family: 'Inter', sans-serif !important;
+        border-radius: 8px !important;
+        caret-color: #7c5cfc !important;
+    }
+    input::placeholder { color: #2a2a3e !important; }
+    [data-baseweb="select"] > div {
+        background-color: #10101a !important;
+        border-color: rgba(255,255,255,0.05) !important;
+        color: #b0b0c8 !important;
+        border-radius: 8px !important;
+    }
+    [data-baseweb="popover"] > div,
+    [data-baseweb="menu"], [role="listbox"] {
+        background-color: #12121e !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+    }
+    [data-baseweb="menu"] li { color: #9090a8 !important; }
+    [data-baseweb="menu"] li:hover {
+        background: rgba(124,92,252,0.08) !important;
+    }
+    [data-baseweb="tag"] {
+        background: rgba(124,92,252,0.1) !important;
+        border-radius: 4px !important; color: #9080e0 !important;
+    }
+    label { color: #404058 !important; font-size: 11px !important; }
+
+    /* ── Checkbox ── */
+    [data-testid="stCheckbox"] label span {
+        color: #505068 !important; font-size: 12px !important;
+    }
+    [data-testid="stCheckbox"] label span[data-testid="stMarkdownContainer"] p {
+        color: #505068 !important;
+    }
+
+    /* ── Tabs → segmented control ── */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0; border-bottom: 1px solid #edf0f2; background: transparent;
+        background: rgba(255,255,255,0.015); border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.03);
+        padding: 3px; gap: 2px; display: inline-flex;
+        border-bottom: none !important;
     }
     .stTabs [data-baseweb="tab"] {
-        font-size: 13px; font-weight: 500; color: #9ca3af;
-        padding: 10px 24px; background: transparent;
+        font-family: 'Inter', sans-serif; font-size: 11px;
+        font-weight: 500; color: #404058; padding: 8px 24px;
+        background: transparent; letter-spacing: 0.08em;
+        text-transform: uppercase; border-radius: 6px;
     }
-    .stTabs [aria-selected="true"] { color: #1a1a2e; font-weight: 600; }
+    .stTabs [aria-selected="true"] {
+        color: #d0d0e4 !important; font-weight: 600;
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] { display: none !important; }
 
     /* ── Buttons ── */
     .stButton > button {
+        font-family: 'Inter', sans-serif !important;
         border-radius: 6px; font-size: 11px; font-weight: 500;
-        border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
-        padding: 4px 14px; transition: all 0.15s ease;
-        box-shadow: none;
+        border: 1px solid rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.02); color: #505068;
+        padding: 6px 16px; letter-spacing: 0.02em;
+        transition: all 0.2s ease; box-shadow: none !important;
     }
     .stButton > button:hover {
-        background: #f9fafb; border-color: #d1d5db; color: #374151;
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08); color: #a0a0b8;
     }
     .stButton > button[kind="primary"] {
-        background: #374151; color: #fff; border-color: #374151;
+        background: rgba(124,92,252,0.7); color: #fff;
+        border-color: rgba(124,92,252,0.5);
     }
     .stButton > button[kind="primary"]:hover {
-        background: #1f2937; border-color: #1f2937;
+        background: rgba(124,92,252,0.9);
     }
 
-    /* ── Cards ── */
+    /* ── Download button ── */
+    .stDownloadButton > button {
+        font-family: 'Inter', sans-serif !important;
+        background: rgba(255,255,255,0.02) !important;
+        color: #505068 !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+    }
+
+    /* ── Form ── */
+    [data-testid="stForm"] {
+        background: transparent !important;
+        border: 1px solid rgba(255,255,255,0.03) !important;
+        border-radius: 8px !important;
+    }
+
+    /* ── Collection cards ── */
     .pk-card {
-        background: #f9fafb; border-radius: 10px; padding: 16px 8px 12px;
-        text-align: center; min-height: 140px; border: 1px solid transparent;
-        transition: background 0.15s ease, border-color 0.15s ease;
+        background: rgba(255,255,255,0.018); border-radius: 14px;
+        padding: 20px 8px 14px; text-align: center; min-height: 155px;
+        border: 1px solid rgba(255,255,255,0.025);
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     }
-    .pk-card:hover { background: #f3f4f6; }
-    .pk-card.pk-active { border-color: #8b5cf6; background: #faf5ff; }
-    .pk-card img { width: 56px; height: 56px; object-fit: contain; }
+    .pk-card:hover {
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.06);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    .pk-card.pk-active {
+        border-color: rgba(124,92,252,0.25);
+        background: rgba(124,92,252,0.05);
+        box-shadow: 0 0 30px rgba(124,92,252,0.06);
+    }
+    .pk-card img {
+        width: 68px; height: 68px; object-fit: contain;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        transition: transform 0.3s ease;
+    }
+    .pk-card:hover img { transform: scale(1.1); }
     .pk-name {
-        font-weight: 600; font-size: 11.5px; color: #1a1a2e;
-        margin-top: 6px; line-height: 1.3;
+        font-family: 'Inter', sans-serif; font-weight: 600;
+        font-size: 12px; color: #d0d0e4; margin-top: 8px;
+        line-height: 1.3;
     }
-    .pk-id { font-size: 10px; color: #b0b8c1; margin-top: 2px; }
-    .pk-badges { margin-top: 5px; min-height: 18px; line-height: 1.8; }
+    .pk-id {
+        font-family: 'Inter', sans-serif; font-size: 10px;
+        color: #2e2e42; margin-top: 2px; font-weight: 500;
+    }
+    .pk-badges { margin-top: 6px; min-height: 18px; line-height: 2; }
     .pk-badge {
-        display: inline-block; font-size: 9px; font-weight: 600;
-        letter-spacing: 0.02em; padding: 1px 6px; border-radius: 3px;
-        margin: 1px;
+        display: inline-block; font-size: 8px; font-weight: 600;
+        letter-spacing: 0.06em; padding: 2px 7px; border-radius: 3px;
+        margin: 1px; text-transform: uppercase;
+        font-family: 'Inter', sans-serif;
     }
 
     /* ── Rate cards ── */
     .rate-card {
-        background: #f9fafb; border-radius: 10px; padding: 16px 8px 12px;
-        text-align: center; min-height: 155px;
-        transition: background 0.15s ease;
+        background: rgba(255,255,255,0.018); border-radius: 14px;
+        padding: 20px 8px 14px; text-align: center; min-height: 160px;
+        border: 1px solid rgba(255,255,255,0.025);
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     }
-    .rate-card:hover { background: #f3f4f6; }
-    .rate-card img { width: 52px; height: 52px; object-fit: contain; }
+    .rate-card:hover {
+        background: rgba(255,255,255,0.04);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    .rate-card img {
+        width: 60px; height: 60px; object-fit: contain;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        transition: transform 0.3s ease;
+    }
+    .rate-card:hover img { transform: scale(1.1); }
     .rate-name {
-        font-weight: 600; font-size: 11.5px; color: #1a1a2e;
-        margin-top: 6px; line-height: 1.3;
+        font-family: 'Inter', sans-serif; font-weight: 600;
+        font-size: 12px; color: #d0d0e4; margin-top: 8px;
     }
-    .rate-id { font-size: 10px; color: #b0b8c1; margin-top: 2px; }
-    .rate-badges { margin-top: 6px; line-height: 1.8; }
-    .rate-sample { font-size: 9px; color: #c4c9d0; margin-top: 3px; }
+    .rate-id {
+        font-family: 'Inter', sans-serif; font-size: 10px;
+        color: #2e2e42; margin-top: 2px;
+    }
+    .rate-badges { margin-top: 6px; line-height: 2; }
+    .rate-sample {
+        font-family: 'Inter', sans-serif; font-size: 9px;
+        color: #222236; margin-top: 3px; letter-spacing: 0.02em;
+    }
 
-    /* ── Summary bar ── */
-    .summary-bar {
-        display: flex; gap: 20px; font-size: 12px; color: #9ca3af;
-        padding: 4px 0; align-items: baseline;
+    /* ── Hero stats ── */
+    .hero-stats {
+        display: flex; gap: 40px; padding: 12px 0 16px;
+        align-items: flex-end;
     }
-    .summary-bar .s-label { font-weight: 500; }
-    .summary-bar .s-val { color: #374151; font-weight: 600; margin-left: 4px; }
+    .hero-stat { display: flex; flex-direction: column; }
+    .hero-val {
+        font-family: 'Inter', sans-serif; font-size: 28px;
+        font-weight: 700; color: #e0e0f0; line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .hero-label {
+        font-family: 'Inter', sans-serif; font-size: 9px;
+        font-weight: 600; color: #2e2e42; text-transform: uppercase;
+        letter-spacing: 0.12em; margin-top: 6px;
+    }
 
     /* ── Page nav ── */
     .page-info {
-        text-align: center; font-size: 12px; color: #9ca3af;
-        padding: 8px 0; font-weight: 500;
+        font-family: 'Inter', sans-serif; text-align: center;
+        font-size: 11px; color: #3a3a52; padding: 8px 0;
+        font-weight: 500; letter-spacing: 0.02em;
     }
 
     /* ── Count label ── */
-    .count-label { font-size: 12px; color: #9ca3af; padding: 4px 0; }
-    .count-label b { color: #374151; font-weight: 600; }
+    .count-label {
+        font-family: 'Inter', sans-serif; font-size: 11px;
+        color: #3a3a52; padding: 6px 0;
+    }
+    .count-label b { color: #d0d0e4; font-weight: 600; }
 
-    /* ── Multiselect tags ── */
-    [data-baseweb="tag"] { border-radius: 4px !important; }
+    /* ── Brand header ── */
+    .brand {
+        font-family: 'Inter', sans-serif; padding: 0 0 12px;
+    }
+    .brand-title {
+        font-size: 20px; font-weight: 700; color: #e8e8f4;
+        letter-spacing: -0.02em;
+    }
+    .brand-sub {
+        font-size: 10px; color: #2e2e42; margin-left: 12px;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        font-weight: 500;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.04); border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+    /* ── Alerts ── */
+    [data-testid="stAlert"] {
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid rgba(255,255,255,0.03) !important;
+        color: #606078 !important; border-radius: 8px !important;
+    }
     </style>
     """,
         unsafe_allow_html=True,
@@ -379,15 +553,18 @@ def badge(label: str, bg: str, fg: str = "#fff") -> str:
     )
 
 
-def render_summary(df: pd.DataFrame) -> None:
+def render_stats(df: pd.DataFrame) -> None:
     total = len(df)
     shundo = int(df["shundo"].sum())
     lucky = int(df["lucky"].sum())
     st.markdown(
-        f'<div class="summary-bar">'
-        f'<span><span class="s-label">Showing</span><span class="s-val">{total}</span></span>'
-        f'<span><span class="s-label">Shundo</span><span class="s-val">{shundo}</span></span>'
-        f'<span><span class="s-label">Lucky</span><span class="s-val">{lucky}</span></span>'
+        f'<div class="hero-stats">'
+        f'<div class="hero-stat"><span class="hero-val">{total}</span>'
+        f'<span class="hero-label">Showing</span></div>'
+        f'<div class="hero-stat"><span class="hero-val">{shundo}</span>'
+        f'<span class="hero-label">Shundo</span></div>'
+        f'<div class="hero-stat"><span class="hero-val">{lucky}</span>'
+        f'<span class="hero-label">Lucky</span></div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -398,11 +575,11 @@ def render_card(
 ) -> None:
     parts: list[str] = []
     if row["shundo"]:
-        parts.append(badge("Shundo", "#8b5cf6"))
+        parts.append(badge("Shundo", "rgba(124,92,252,0.15)", "#a090ff"))
     if row["lucky"]:
-        parts.append(badge("Lucky", "#f59e0b"))
+        parts.append(badge("Lucky", "rgba(240,160,48,0.15)", "#ffc060"))
     if not row.get("tradeable", True):
-        parts.append(badge("Untradeable", "#d1d5db", "#6b7280"))
+        parts.append(badge("Untradeable", "rgba(255,255,255,0.04)", "#404058"))
 
     badge_html = " ".join(parts)
 
@@ -496,9 +673,16 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                 filtered = filtered[~filtered[col] if negate else filtered[col]]
 
     st.markdown(
-        f'<div class="count-label"><b>{len(filtered)}</b> Pokémon with live rates</div>',
+        f'<div class="count-label"><b>{len(filtered)}</b> with live rates</div>',
         unsafe_allow_html=True,
     )
+
+    _GLOW = {
+        "#10b981": "rgba(16,185,129,0.10)",
+        "#f59e0b": "rgba(245,158,11,0.10)",
+        "#3b82f6": "rgba(59,130,246,0.10)",
+        "#2a2a40": "none",
+    }
 
     for i in range(0, len(filtered), CARDS_PER_ROW):
         cols = st.columns(CARDS_PER_ROW)
@@ -518,14 +702,16 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                     elif rate_val >= 1 / 500:
                         accent = "#3b82f6"
                     else:
-                        accent = "#d1d5db"
+                        accent = "#2a2a40"
                     badges_html = badge(row["rate"], accent)
                     if row.get("shundo", False):
-                        badges_html += " " + badge("✦", "#8b5cf6")
+                        badges_html += " " + badge("✦", "rgba(124,92,252,0.15)", "#a090ff")
                     if row.get("lucky", False):
-                        badges_html += " " + badge("✦", "#f59e0b")
+                        badges_html += " " + badge("✦", "rgba(240,160,48,0.15)", "#ffc060")
+                    glow = _GLOW.get(accent, "none")
+                    shadow = f"box-shadow:0 -4px 20px {glow};" if glow != "none" else ""
                     st.markdown(
-                        f'<div class="rate-card" style="border-top:3px solid {accent};">'
+                        f'<div class="rate-card" style="border-top:2px solid {accent};{shadow}">'
                         f'<img src="{image_url}" '
                         f'onerror="this.src=\'{FALLBACK_IMAGE}\'" loading="lazy">'
                         f'<div class="rate-name">{row["name"]}</div>'
@@ -542,27 +728,41 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 
 
-def render_sidebar_filters(merged: pd.DataFrame):
-    st.sidebar.title("Filters")
-    search = st.sidebar.text_input("Search", placeholder="Pokémon name…")
-
-    filter_tags = st.sidebar.multiselect("Tags", FILTER_TAGS, default=["Released"])
-
-    c1, c2 = st.sidebar.columns(2)
+def render_controls():
+    c_search, c_gen, c_sort = st.columns([3, 1, 1])
+    with c_search:
+        search = st.text_input(
+            "search", placeholder="Search Pokémon…",
+            label_visibility="collapsed",
+        )
     gen_options = ["All"] + [f"Gen {i}" for i in range(1, 10)]
-    gen_opt = c1.selectbox("Generation", gen_options)
-    sort_opt = c2.selectbox("Sort", SORT_OPTIONS)
+    with c_gen:
+        gen_opt = st.selectbox("gen", gen_options, label_visibility="collapsed")
+    with c_sort:
+        sort_opt = st.selectbox("sort", SORT_OPTIONS, label_visibility="collapsed")
 
-    root_only = st.sidebar.checkbox("Root representatives only")
-    show_family = st.sidebar.checkbox("Expand to full family")
+    c_tags, c_opts = st.columns([3, 1])
+    with c_tags:
+        filter_tags = st.multiselect(
+            "tags", FILTER_TAGS, default=["Released"],
+            label_visibility="collapsed",
+        )
+    with c_opts:
+        root_only = st.checkbox("Root only")
+        show_family = st.checkbox("Full family")
 
-    st.sidebar.markdown("---")
+    return search, filter_tags, gen_opt, sort_opt, root_only, show_family
+
+
+def render_sidebar_settings():
+    st.sidebar.title("Settings")
     st.sidebar.subheader("Toggle Mode")
     toggle_options = ["Off", "Shundo", "Lucky"]
-    toggle_mode = st.sidebar.selectbox("Click cards to toggle", toggle_options)
+    toggle_mode = st.sidebar.selectbox(
+        "Click cards to toggle", toggle_options,
+    )
     toggle_tag = None if toggle_mode == "Off" else toggle_mode.lower()
-
-    return search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag
+    return toggle_tag
 
 
 def render_sidebar_editor(merged: pd.DataFrame, collection_df: pd.DataFrame):
@@ -618,7 +818,10 @@ def render_sidebar_export(filtered: pd.DataFrame):
 
 def main():
     st.set_page_config(
-        page_title="Pokémon GO Tracker", layout="wide", page_icon="🎮"
+        page_title="Pokémon GO",
+        layout="wide",
+        page_icon="🎮",
+        initial_sidebar_state="collapsed",
     )
     inject_css()
 
@@ -627,11 +830,26 @@ def main():
     collection_df = ensure_collection_complete(pokemon_df, collection_df)
     merged = merge_data(pokemon_df, collection_df)
 
-    tab_collection, tab_shiny = st.tabs(["Collection", "Live Shiny Rates"])
+    # Sidebar — secondary controls (collapsed by default)
+    toggle_tag = render_sidebar_settings()
+    render_sidebar_editor(merged, collection_df)
+
+    # Brand header
+    st.markdown(
+        '<div class="brand">'
+        '<span class="brand-title">Pokémon GO</span>'
+        '<span class="brand-sub">Collection Tracker</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    tab_collection, tab_shiny = st.tabs(["Collection", "Live Rates"])
 
     with tab_collection:
-        search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_sidebar_filters(merged)
-        filtered = apply_filters(merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family)
+        search, filter_tags, gen_opt, sort_opt, root_only, show_family = render_controls()
+        filtered = apply_filters(
+            merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family,
+        )
 
         total_pages = max(1, -(-len(filtered) // CARDS_PER_PAGE))
 
@@ -642,9 +860,9 @@ def main():
         page_start = (st.session_state.page - 1) * CARDS_PER_PAGE + 1
         page_end = min(st.session_state.page * CARDS_PER_PAGE, len(filtered))
 
-        col_summary, col_nav = st.columns([3, 2])
-        with col_summary:
-            render_summary(filtered)
+        col_stats, col_nav = st.columns([3, 2])
+        with col_stats:
+            render_stats(filtered)
         with col_nav:
             c1, c2, c3 = st.columns([1, 2, 1])
             with c1:
@@ -661,14 +879,12 @@ def main():
                 if st.button("›", disabled=st.session_state.page >= total_pages, use_container_width=True):
                     st.session_state.page += 1
                     st.rerun()
-        page = st.session_state.page - 1
 
-        render_grid(filtered, page, toggle_tag, collection_df)
+        render_grid(filtered, st.session_state.page - 1, toggle_tag, collection_df)
 
     with tab_shiny:
         render_shiny_rates(merged)
 
-    render_sidebar_editor(merged, collection_df)
     render_sidebar_export(filtered)
 
 
