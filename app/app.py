@@ -37,6 +37,123 @@ SORT_OPTIONS = [
 
 GSHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
+
+# ---------------------------------------------------------------------------
+# Theme
+# ---------------------------------------------------------------------------
+
+
+def inject_css():
+    st.markdown(
+        """
+    <style>
+    /* ── Base ── */
+    .block-container { padding-top: 1.5rem; padding-bottom: 1rem; }
+
+    /* ── Sidebar ── */
+    [data-testid="stSidebar"] { background: #f9fafb; }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
+        font-size: 13px; font-weight: 700; color: #374151;
+        letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+        font-size: 11px; font-weight: 700; color: #9ca3af;
+        text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    section[data-testid="stSidebar"] hr {
+        border: none; border-top: 1px solid #f0f0f0; margin: 14px 0;
+    }
+
+    /* ── Tabs ── */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0; border-bottom: 1px solid #edf0f2; background: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 13px; font-weight: 500; color: #9ca3af;
+        padding: 10px 24px; background: transparent;
+    }
+    .stTabs [aria-selected="true"] { color: #1a1a2e; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .stButton > button {
+        border-radius: 6px; font-size: 11px; font-weight: 500;
+        border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+        padding: 4px 14px; transition: all 0.15s ease;
+        box-shadow: none;
+    }
+    .stButton > button:hover {
+        background: #f9fafb; border-color: #d1d5db; color: #374151;
+    }
+    .stButton > button[kind="primary"] {
+        background: #374151; color: #fff; border-color: #374151;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: #1f2937; border-color: #1f2937;
+    }
+
+    /* ── Cards ── */
+    .pk-card {
+        background: #f9fafb; border-radius: 10px; padding: 16px 8px 12px;
+        text-align: center; min-height: 140px; border: 1px solid transparent;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .pk-card:hover { background: #f3f4f6; }
+    .pk-card.pk-active { border-color: #8b5cf6; background: #faf5ff; }
+    .pk-card img { width: 56px; height: 56px; object-fit: contain; }
+    .pk-name {
+        font-weight: 600; font-size: 11.5px; color: #1a1a2e;
+        margin-top: 6px; line-height: 1.3;
+    }
+    .pk-id { font-size: 10px; color: #b0b8c1; margin-top: 2px; }
+    .pk-badges { margin-top: 5px; min-height: 18px; line-height: 1.8; }
+    .pk-badge {
+        display: inline-block; font-size: 9px; font-weight: 600;
+        letter-spacing: 0.02em; padding: 1px 6px; border-radius: 3px;
+        margin: 1px;
+    }
+
+    /* ── Rate cards ── */
+    .rate-card {
+        background: #f9fafb; border-radius: 10px; padding: 16px 8px 12px;
+        text-align: center; min-height: 155px;
+        transition: background 0.15s ease;
+    }
+    .rate-card:hover { background: #f3f4f6; }
+    .rate-card img { width: 52px; height: 52px; object-fit: contain; }
+    .rate-name {
+        font-weight: 600; font-size: 11.5px; color: #1a1a2e;
+        margin-top: 6px; line-height: 1.3;
+    }
+    .rate-id { font-size: 10px; color: #b0b8c1; margin-top: 2px; }
+    .rate-badges { margin-top: 6px; line-height: 1.8; }
+    .rate-sample { font-size: 9px; color: #c4c9d0; margin-top: 3px; }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+        display: flex; gap: 20px; font-size: 12px; color: #9ca3af;
+        padding: 4px 0; align-items: baseline;
+    }
+    .summary-bar .s-label { font-weight: 500; }
+    .summary-bar .s-val { color: #374151; font-weight: 600; margin-left: 4px; }
+
+    /* ── Page nav ── */
+    .page-info {
+        text-align: center; font-size: 12px; color: #9ca3af;
+        padding: 8px 0; font-weight: 500;
+    }
+
+    /* ── Count label ── */
+    .count-label { font-size: 12px; color: #9ca3af; padding: 4px 0; }
+    .count-label b { color: #374151; font-weight: 600; }
+
+    /* ── Multiselect tags ── */
+    [data-baseweb="tag"] { border-radius: 4px !important; }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
@@ -257,9 +374,8 @@ def apply_filters(
 
 def badge(label: str, bg: str, fg: str = "#fff") -> str:
     return (
-        f'<span style="background:{bg};color:{fg};padding:2px 6px;'
-        f'border-radius:4px;font-size:11px;margin:1px;'
-        f'display:inline-block;">{label}</span>'
+        f'<span class="pk-badge" style="background:{bg};color:{fg};">'
+        f'{label}</span>'
     )
 
 
@@ -267,14 +383,11 @@ def render_summary(df: pd.DataFrame) -> None:
     total = len(df)
     shundo = int(df["shundo"].sum())
     lucky = int(df["lucky"].sum())
-    not_shundo = total - shundo
-    released = int(df["released"].sum()) if "released" in df.columns else total
     st.markdown(
-        f'<div style="display:flex;gap:24px;font-size:13px;padding:4px 0;">'
-        f'<span><b>Showing:</b> {total}</span>'
-        f'<span><b>Shundo:</b> {shundo}</span>'
-        f'<span><b>Not Shundo:</b> {not_shundo}</span>'
-        f'<span><b>Lucky:</b> {lucky}</span>'
+        f'<div class="summary-bar">'
+        f'<span><span class="s-label">Showing</span><span class="s-val">{total}</span></span>'
+        f'<span><span class="s-label">Shundo</span><span class="s-val">{shundo}</span></span>'
+        f'<span><span class="s-label">Lucky</span><span class="s-val">{lucky}</span></span>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -283,37 +396,30 @@ def render_summary(df: pd.DataFrame) -> None:
 def render_card(
     row: pd.Series, toggle_tag: str | None, collection_df: pd.DataFrame
 ) -> None:
-    badges: list[str] = []
+    parts: list[str] = []
     if row["shundo"]:
-        badges.append(badge("🌟 Shundo", "#9C27B0"))
+        parts.append(badge("Shundo", "#8b5cf6"))
     if row["lucky"]:
-        badges.append(badge("🍀 Lucky", "#FF9800"))
+        parts.append(badge("Lucky", "#f59e0b"))
     if not row.get("tradeable", True):
-        badges.append(badge("🚫 Untradeable", "#757575"))
+        parts.append(badge("Untradeable", "#d1d5db", "#6b7280"))
 
-    badge_str = (
-        " ".join(badges) if badges
-        else '<span style="color:#999;font-size:11px;">—</span>'
-    )
+    badge_html = " ".join(parts)
 
     image_url = row.get("image_url", "")
     if pd.isna(image_url) or not image_url:
         image_url = FALLBACK_IMAGE
 
-    border = "2px solid #4CAF50" if toggle_tag and row.get(toggle_tag, False) else "1px solid #e0e0e0"
+    active = "pk-active" if toggle_tag and row.get(toggle_tag, False) else ""
 
     st.markdown(
-        f"""
-        <div style="border:{border};border-radius:8px;padding:6px;
-                    text-align:center;min-height:150px;background:#fafafa;">
-            <img src="{image_url}" width="56" height="56"
-                 style="object-fit:contain;"
-                 onerror="this.src='{FALLBACK_IMAGE}'" loading="lazy">
-            <div style="font-weight:bold;margin-top:3px;font-size:12px;">{row['name']}</div>
-            <div style="color:#666;font-size:10px;">#{row['pokemon_id']}</div>
-            <div style="margin-top:4px;line-height:1.6;">{badge_str}</div>
-        </div>
-        """,
+        f'<div class="pk-card {active}">'
+        f'<img src="{image_url}" '
+        f'onerror="this.src=\'{FALLBACK_IMAGE}\'" loading="lazy">'
+        f'<div class="pk-name">{row["name"]}</div>'
+        f'<div class="pk-id">#{row["pokemon_id"]}</div>'
+        f'<div class="pk-badges">{badge_html}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -323,9 +429,8 @@ def render_card(
     if show_toggle:
         pid = int(row["pokemon_id"])
         current = bool(row.get(toggle_tag, False))
-        icon = "✓" if current else "✗"
         if st.button(
-            f"{icon} {toggle_tag.title()}",
+            f"{'✓' if current else '○'} {toggle_tag.title()}",
             key=f"toggle_{pid}",
             use_container_width=True,
             type="primary" if current else "secondary",
@@ -355,7 +460,7 @@ def render_grid(
 def render_shiny_rates(merged: pd.DataFrame) -> None:
     col_refresh, col_filter = st.columns([1, 3])
     with col_refresh:
-        if st.button("🔄 Refresh Rates", key="refresh_shiny_rates"):
+        if st.button("Refresh", key="refresh_shiny_rates"):
             st.session_state.pop("shiny_rates_df", None)
             st.rerun()
     with col_filter:
@@ -365,7 +470,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
 
     rates_df = fetch_shiny_rates()
     if rates_df is None:
-        st.warning("Could not fetch live shiny rates from shinyrates.com")
+        st.warning("Could not fetch live shiny rates.")
         return
 
     all_rates = get_shiny_rates_merged(merged, rates_df)
@@ -391,9 +496,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                 filtered = filtered[~filtered[col] if negate else filtered[col]]
 
     st.markdown(
-        f'<div style="font-size:13px;padding:4px 0;margin-bottom:8px;">'
-        f'<b>{len(filtered)}</b> Pokémon with live shiny rates'
-        f'</div>',
+        f'<div class="count-label"><b>{len(filtered)}</b> Pokémon with live rates</div>',
         unsafe_allow_html=True,
     )
 
@@ -407,38 +510,29 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                     image_url = row.get("image_url", "")
                     if pd.isna(image_url) or not image_url:
                         image_url = FALLBACK_IMAGE
-                    rate_str = row["rate"]
-                    sample = row["sample_size"]
                     rate_val = row["shiny_rate_value"]
                     if rate_val >= 1 / 100:
-                        rate_color = "#4CAF50"
+                        accent = "#10b981"
                     elif rate_val >= 1 / 300:
-                        rate_color = "#FF9800"
+                        accent = "#f59e0b"
                     elif rate_val >= 1 / 500:
-                        rate_color = "#2196F3"
+                        accent = "#3b82f6"
                     else:
-                        rate_color = "#9E9E9E"
-                    badges_html = badge(rate_str, rate_color)
+                        accent = "#d1d5db"
+                    badges_html = badge(row["rate"], accent)
                     if row.get("shundo", False):
-                        badges_html += " " + badge("🌟", "#9C27B0")
+                        badges_html += " " + badge("✦", "#8b5cf6")
                     if row.get("lucky", False):
-                        badges_html += " " + badge("🍀", "#FF9800")
+                        badges_html += " " + badge("✦", "#f59e0b")
                     st.markdown(
-                        f"""
-                        <div style="border:2px solid {rate_color};border-radius:8px;
-                                    padding:6px;text-align:center;min-height:170px;
-                                    background:#fafafa;">
-                            <img src="{image_url}" width="56" height="56"
-                                 style="object-fit:contain;"
-                                 onerror="this.src='{FALLBACK_IMAGE}'" loading="lazy">
-                            <div style="font-weight:bold;margin-top:3px;font-size:12px;">
-                                {row['name']}</div>
-                            <div style="color:#666;font-size:10px;">#{row['pokemon_id']}</div>
-                            <div style="margin-top:4px;">{badges_html}</div>
-                            <div style="color:#999;font-size:9px;margin-top:2px;">
-                                sample: {sample:,}</div>
-                        </div>
-                        """,
+                        f'<div class="rate-card" style="border-top:3px solid {accent};">'
+                        f'<img src="{image_url}" '
+                        f'onerror="this.src=\'{FALLBACK_IMAGE}\'" loading="lazy">'
+                        f'<div class="rate-name">{row["name"]}</div>'
+                        f'<div class="rate-id">#{row["pokemon_id"]}</div>'
+                        f'<div class="rate-badges">{badges_html}</div>'
+                        f'<div class="rate-sample">n={row["sample_size"]:,}</div>'
+                        f'</div>',
                         unsafe_allow_html=True,
                     )
 
@@ -450,17 +544,17 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
 
 def render_sidebar_filters(merged: pd.DataFrame):
     st.sidebar.title("Filters")
-    search = st.sidebar.text_input("Search by name")
+    search = st.sidebar.text_input("Search", placeholder="Pokémon name…")
 
-    filter_tags = st.sidebar.multiselect("Filter tags", FILTER_TAGS, default=["Released"])
+    filter_tags = st.sidebar.multiselect("Tags", FILTER_TAGS, default=["Released"])
 
+    c1, c2 = st.sidebar.columns(2)
     gen_options = ["All"] + [f"Gen {i}" for i in range(1, 10)]
-    gen_opt = st.sidebar.selectbox("Generation", gen_options)
+    gen_opt = c1.selectbox("Generation", gen_options)
+    sort_opt = c2.selectbox("Sort", SORT_OPTIONS)
 
-    sort_opt = st.sidebar.selectbox("Sort", SORT_OPTIONS)
-
-    root_only = st.sidebar.checkbox("Show only root representatives")
-    show_family = st.sidebar.checkbox("Show all family members")
+    root_only = st.sidebar.checkbox("Root representatives only")
+    show_family = st.sidebar.checkbox("Expand to full family")
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("Toggle Mode")
@@ -473,13 +567,13 @@ def render_sidebar_filters(merged: pd.DataFrame):
 
 def render_sidebar_editor(merged: pd.DataFrame, collection_df: pd.DataFrame):
     st.sidebar.markdown("---")
-    st.sidebar.subheader("Edit Pokémon")
+    st.sidebar.subheader("Edit")
 
     options = merged.sort_values("pokemon_id").apply(
         lambda r: f"#{r['pokemon_id']} {r['name']}", axis=1
     ).tolist()
 
-    selected = st.sidebar.selectbox("Select Pokémon", options, key="edit_select")
+    selected = st.sidebar.selectbox("Pokémon", options, key="edit_select")
     pokemon_id = int(selected.split()[0].lstrip("#"))
     current = collection_df[collection_df["pokemon_id"] == pokemon_id].iloc[0]
 
@@ -492,15 +586,15 @@ def render_sidebar_editor(merged: pd.DataFrame, collection_df: pd.DataFrame):
             lucky = st.checkbox("Lucky", value=bool(current["lucky"]))
         else:
             lucky = bool(current["lucky"])
-            st.caption("🚫 Untradeable — cannot be lucky")
-        submitted = st.form_submit_button("💾 Save")
+            st.caption("Untradeable — cannot be lucky")
+        submitted = st.form_submit_button("Save")
 
     if submitted:
         idx = collection_df[collection_df["pokemon_id"] == pokemon_id].index[0]
         collection_df.at[idx, "shundo"] = shundo
         collection_df.at[idx, "lucky"] = lucky
         save_collection(collection_df)
-        st.sidebar.success(f"Saved #{pokemon_id}!")
+        st.sidebar.success(f"Saved #{pokemon_id}")
         st.rerun()
 
 
@@ -513,7 +607,7 @@ def render_sidebar_export(filtered: pd.DataFrame):
     export_df = filtered[[c for c in export_cols if c in filtered.columns]]
     csv_data = export_df.to_csv(index=False)
     st.sidebar.download_button(
-        "📥 Export filtered CSV", csv_data, "filtered_pokemon.csv", "text/csv"
+        "Export CSV", csv_data, "filtered_pokemon.csv", "text/csv"
     )
 
 
@@ -526,12 +620,14 @@ def main():
     st.set_page_config(
         page_title="Pokémon GO Tracker", layout="wide", page_icon="🎮"
     )
+    inject_css()
+
     pokemon_df = load_pokemon()
     collection_df = load_collection()
     collection_df = ensure_collection_complete(pokemon_df, collection_df)
     merged = merge_data(pokemon_df, collection_df)
 
-    tab_collection, tab_shiny = st.tabs(["📦 Collection", "🔥 Live Shiny Rates"])
+    tab_collection, tab_shiny = st.tabs(["Collection", "Live Shiny Rates"])
 
     with tab_collection:
         search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_sidebar_filters(merged)
@@ -552,18 +648,17 @@ def main():
         with col_nav:
             c1, c2, c3 = st.columns([1, 2, 1])
             with c1:
-                if st.button("◀", disabled=st.session_state.page <= 1, use_container_width=True):
+                if st.button("‹", disabled=st.session_state.page <= 1, use_container_width=True):
                     st.session_state.page -= 1
                     st.rerun()
             with c2:
                 st.markdown(
-                    f'<div style="text-align:center;font-size:13px;padding:8px 0;">'
-                    f'{page_start}–{page_end} of {len(filtered)} '
-                    f'({st.session_state.page}/{total_pages})</div>',
+                    f'<div class="page-info">'
+                    f'{page_start}–{page_end} of {len(filtered)}</div>',
                     unsafe_allow_html=True,
                 )
             with c3:
-                if st.button("▶", disabled=st.session_state.page >= total_pages, use_container_width=True):
+                if st.button("›", disabled=st.session_state.page >= total_pages, use_container_width=True):
                     st.session_state.page += 1
                     st.rerun()
         page = st.session_state.page - 1
