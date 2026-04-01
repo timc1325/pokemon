@@ -22,17 +22,22 @@ SHINY_RATES_URL = "https://shinyrates.com/data/rate"
 CARDS_PER_ROW = 8
 CARDS_PER_PAGE = 80
 
+# Live Rates — shared accents (card borders/badges and bar chart tiers)
+LIVE_RATE_GREEN = "#10b981"
+LIVE_RATE_AMBER = "#f59e0b"
+LIVE_RATE_BLUE = "#3b82f6"
+LIVE_RATE_DIM = "#2a2a40"
+
 # Live Rates bar chart: best-odds only, short list for readability
 BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
 BAR_CHART_TOP_N = 42
-# “Large sample” tier (amber bar): stricter — high quantile + floor on n
 BAR_CHART_LARGE_SAMPLE_Q = 0.90
 BAR_CHART_LARGE_SAMPLE_MIN_N = 8_000
 CHART_BG = "#08080e"
 CHART_GRID = "#ffffff0d"
-CHART_MUTED = "#3d3d52"
-CHART_ACCENT_HI_N = "#f59e0b"  # large sample (amber)
-CHART_ACCENT_NP = "#60a5fa"  # >1 expected shiny (sky blue)
+CHART_MUTED = "#3d3d52"  # bar “standard” fill (slightly above LIVE_RATE_DIM for contrast on bg)
+CHART_ACCENT_HI_N = LIVE_RATE_GREEN  # large sample — same green as best card tier
+CHART_ACCENT_NP = LIVE_RATE_BLUE  # >1 expected shiny — same blue as card 1/500+ tier
 
 # jsDelivr serves the same PokeAPI sprite repo with better availability than
 # raw.githubusercontent.com (fewer timeouts / rate limits when loading many images).
@@ -766,10 +771,10 @@ def render_grid(
 
 def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
     _GLOW = {
-        "#10b981": "rgba(16,185,129,0.10)",
-        "#f59e0b": "rgba(245,158,11,0.10)",
-        "#3b82f6": "rgba(59,130,246,0.10)",
-        "#2a2a40": "none",
+        LIVE_RATE_GREEN: "rgba(16,185,129,0.10)",
+        LIVE_RATE_AMBER: "rgba(245,158,11,0.10)",
+        LIVE_RATE_BLUE: "rgba(59,130,246,0.10)",
+        LIVE_RATE_DIM: "none",
     }
 
     for i in range(0, len(filtered), CARDS_PER_ROW):
@@ -781,13 +786,13 @@ def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
                 with col:
                     rate_val = row["shiny_rate_value"]
                     if rate_val >= 1 / 100:
-                        accent = "#10b981"
+                        accent = LIVE_RATE_GREEN
                     elif rate_val >= 1 / 300:
-                        accent = "#f59e0b"
+                        accent = LIVE_RATE_AMBER
                     elif rate_val >= 1 / 500:
-                        accent = "#3b82f6"
+                        accent = LIVE_RATE_BLUE
                     else:
-                        accent = "#2a2a40"
+                        accent = LIVE_RATE_DIM
                     badges_html = badge(row["rate"], accent)
                     if row.get("shundo", False):
                         badges_html += " " + badge("✦", "rgba(124,92,252,0.15)", "#a090ff")
@@ -834,7 +839,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     hi_np = ">1 expected shiny"
     mask_teal = chart_df["sample_size"] >= thr
     mask_np = chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1
-    # Amber (large n) first; sky blue only if not amber and n×p > 1; else standard.
+    # Green (large n) first; blue only if not green and n×p > 1; else standard.
     chart_df["bar_tier"] = lo
     chart_df.loc[mask_np & ~mask_teal, "bar_tier"] = hi_np
     chart_df.loc[mask_teal, "bar_tier"] = hi
@@ -944,7 +949,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"**Amber**: n ≥ **{thr:,.0f}**. **Blue**: **>1 expected shiny** in the sample (when not amber)."
+        f"Colors match **Cards**: **green** = large n (≥ **{thr:,.0f}**); **blue** = **>1 expected shiny** "
+        f"if not green."
     )
 
 
