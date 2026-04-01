@@ -22,6 +22,14 @@ SHINY_RATES_URL = "https://shinyrates.com/data/rate"
 CARDS_PER_ROW = 8
 CARDS_PER_PAGE = 80
 
+# Live Rates bar chart: best-odds only, short list for readability
+BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
+BAR_CHART_TOP_N = 20
+CHART_BG = "#08080e"
+CHART_GRID = "#ffffff0d"
+CHART_MUTED = "#3d3d52"
+CHART_ACCENT_HI_N = "#5eead4"
+
 # jsDelivr serves the same PokeAPI sprite repo with better availability than
 # raw.githubusercontent.com (fewer timeouts / rate limits when loading many images).
 _SPRITES_CDN = (
@@ -796,18 +804,27 @@ def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
 
 
 def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
-    """Horizontal bars of shiny probability; brighter bars = heavier sampling."""
-    if filtered.empty:
+    """Short list of best reported rates; icons + bars on app background colors."""
+    elig = filtered[filtered["shiny_rate_value"] >= BAR_CHART_MIN_PROB].copy()
+    if elig.empty:
+        st.info(
+            f"No Pokémon in this filter with rate ≥ **1 in {round(1 / BAR_CHART_MIN_PROB)}** "
+            "on the live list. Loosen filters or use **Cards**."
+        )
         return
 
-    thr = float(filtered["sample_size"].quantile(0.75))
+    elig = elig.sort_values("shiny_rate_value", ascending=False).head(BAR_CHART_TOP_N)
+
+    thr = float(elig["sample_size"].quantile(0.75))
     if thr < 1:
         thr = 1.0
 
-    chart_df = filtered.copy()
+    chart_df = elig.copy()
     chart_df["bar_label"] = (
         "#" + chart_df["pokemon_id"].astype(int).astype(str) + " " + chart_df["name"].astype(str)
     )
+    chart_df["sprite_url"] = chart_df["pokemon_id"].astype(int).map(_cdn_default_sprite_url)
+    chart_df["icon_x"] = 0.0
     rv = chart_df["shiny_rate_value"]
     chart_df["one_in"] = (1.0 / rv).where((rv > 0) & rv.notna()).round()
 
@@ -816,59 +833,108 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         {True: hi, False: lo}
     )
 
-    bar_height = 13
-    h = int(min(920, max(280, len(chart_df) * bar_height + 80)))
+    row_step = 20
+    h = int(max(220, len(chart_df) * row_step + 56))
+    y_sort = alt.EncodingSortField(field="shiny_rate_value", order="descending")
+    y_icons = alt.Y(
+        "bar_label:N",
+        axis=None,
+        sort=y_sort,
+        title=None,
+    )
+    y_bars = alt.Y(
+        "bar_label:N",
+        axis=alt.Axis(
+            domainColor=CHART_GRID,
+            labelColor="#d8d8e8",
+            tickColor=CHART_GRID,
+            grid=False,
+            labelFontSize=12,
+            labelLimit=200,
+            title=None,
+        ),
+        sort=y_sort,
+        title=None,
+    )
 
     color_scale = alt.Scale(
         domain=[lo, hi],
-        range=["#4f4f66", "#5eead4"],
+        range=[CHART_MUTED, CHART_ACCENT_HI_N],
     )
 
-    chart = (
+    tooltip = [
+        alt.Tooltip("name:N", title="Pokémon"),
+        alt.Tooltip("pokemon_id:Q", title="ID"),
+        alt.Tooltip("rate:N", title="Reported rate"),
+        alt.Tooltip("shiny_rate_value:Q", title="Probability", format=".3%"),
+        alt.Tooltip("one_in:Q", title="≈ 1 in"),
+        alt.Tooltip("sample_size:Q", title="Sample n", format=","),
+    ]
+
+    icon_chart = (
         alt.Chart(chart_df)
-        .mark_bar(cornerRadiusEnd=3, height=10)
+        .mark_image(width=36, height=36)
+        .encode(
+            x=alt.X(
+                "icon_x:Q",
+                axis=None,
+                scale=alt.Scale(domain=[-0.5, 0.5], range=[0, 52], nice=False, zero=False),
+            ),
+            y=y_icons,
+            url="sprite_url:N",
+            tooltip=tooltip,
+        )
+        .properties(width=56, height=h)
+    )
+
+    bar_chart = (
+        alt.Chart(chart_df)
+        .mark_bar(cornerRadiusEnd=4, height=14)
         .encode(
             x=alt.X(
                 "shiny_rate_value:Q",
-                title="Estimated shiny chance",
-                axis=alt.Axis(format=".2%", grid=True),
-            ),
-            y=alt.Y(
-                "bar_label:N",
-                sort="-x",
                 title=None,
-                axis=alt.Axis(labelLimit=260, labelFontSize=11),
+                axis=alt.Axis(
+                    format=".2%",
+                    grid=True,
+                    domainColor=CHART_GRID,
+                    gridColor=CHART_GRID,
+                    tickColor=CHART_GRID,
+                    labelColor="#a7a7bf",
+                    titleColor="#a7a7bf",
+                    titlePadding=8,
+                    title="Chance (live estimate)",
+                ),
             ),
+            y=y_bars,
             color=alt.Color(
                 "well_sampled:N",
                 scale=color_scale,
-                legend=alt.Legend(orient="top", title=None),
-            ),
-            tooltip=[
-                alt.Tooltip("name:N", title="Pokémon"),
-                alt.Tooltip("pokemon_id:Q", title="ID"),
-                alt.Tooltip("rate:N", title="Reported rate"),
-                alt.Tooltip(
-                    "shiny_rate_value:Q",
-                    title="Probability",
-                    format=".3%",
+                legend=alt.Legend(
+                    orient="top",
+                    title=None,
+                    labelColor="#d8d8e8",
+                    symbolType="square",
                 ),
-                alt.Tooltip("one_in:Q", title="≈ 1 in"),
-                alt.Tooltip("sample_size:Q", title="Sample n", format=","),
-            ],
+            ),
+            tooltip=tooltip,
         )
-        .properties(height=h, width="container")
-        .configure_axis(gridColor="#ffffff10", domainColor="#ffffff18")
-        .configure_view(stroke=None)
-        .configure_axisX(labelColor="#c4c4d8", titleColor="#a7a7bf")
-        .configure_axisY(labelColor="#c4c4d8")
-        .configure_legend(labelColor="#c4c4d8")
+        .properties(height=h)
+    )
+
+    chart = (
+        (icon_chart | bar_chart)
+        .resolve_scale(y="shared")
+        .configure(background=CHART_BG)
+        .configure_view(fill=CHART_BG, stroke=None)
+        .configure_concat(spacing=6)
     )
 
     st.altair_chart(chart, use_container_width=True)
     st.caption(
-        f"**Teal** bars are in the **top quartile** by sample size for this filtered list "
-        f"(n ≥ **{thr:,.0f}**). Larger *n* usually means a more stable estimate."
+        f"Showing up to **{BAR_CHART_TOP_N}** species with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** "
+        f"after your filters (**{len(chart_df)}** here). **Teal** = sample size in the top quartile "
+        f"of this short list (n ≥ **{thr:,.0f}**)."
     )
 
 
