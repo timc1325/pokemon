@@ -1,9 +1,9 @@
 """Generate pokemon.csv from the parent project's pokemon_family.csv.
 
 Usage:
-    python localapp/generate_data.py
+    python app/generate_data.py
 
-- pokemon.csv is written to localapp/data/ (committed to repo).
+- pokemon.csv is written to app/data/ (committed to repo).
 - Collection data lives in Google Sheets (managed through the app).
 """
 
@@ -11,9 +11,8 @@ from pathlib import Path
 
 import pandas as pd
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-FAMILY_CSV = PROJECT_ROOT / "data" / "pokemon_family.csv"
-LOCAL_DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = Path(__file__).resolve().parent / "data"
+FAMILY_CSV = DATA_DIR / "pokemon_family.csv"
 
 IMAGE_URL_TEMPLATE = (
     "https://raw.githubusercontent.com/PokeAPI/sprites"
@@ -86,14 +85,14 @@ def generate_pokemon_csv() -> pd.DataFrame:
     ]]
     pokemon_df = pokemon_df.sort_values("pokemon_id").reset_index(drop=True)
 
-    out_path = LOCAL_DATA_DIR / "pokemon.csv"
+    out_path = DATA_DIR / "pokemon.csv"
     pokemon_df.to_csv(out_path, index=False)
     print(f"Wrote {len(pokemon_df)} rows to {out_path}")
     return pokemon_df
 
 
 def main() -> None:
-    LOCAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     generate_pokemon_csv()
 
 

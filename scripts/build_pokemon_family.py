@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 SPECIES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species.csv"
-DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "pokemon_family.csv"
+DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parents[1] / "app" / "data" / "pokemon_family.csv"
 
 def build_family_table(output_path=DEFAULT_OUTPUT_PATH):
     # Load species table

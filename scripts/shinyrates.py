@@ -6,8 +6,8 @@ from urllib.request import Request, urlopen
 
 import pandas as pd
 
-DEFAULT_OWNED_PATH = Path(__file__).resolve().parents[1] / "data" / "shundo.json"
-DEFAULT_FAMILY_PATH = Path(__file__).resolve().parents[1] / "data" / "pokemon_family.csv"
+DEFAULT_OWNED_PATH = None  # No default; pass --owned path to a JSON list of owned IDs
+DEFAULT_FAMILY_PATH = Path(__file__).resolve().parents[1] / "app" / "data" / "pokemon_family.csv"
 DEFAULT_RATES_URL = "https://shinyrates.com/data/rate"
 USER_AGENT = "Mozilla/5.0"
 
@@ -66,7 +66,7 @@ def get_live_targets(owned_ids: set[int], family_df: pd.DataFrame, rates_df: pd.
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--owned", type=Path, default=DEFAULT_OWNED_PATH)
+    parser.add_argument("--owned", type=Path, required=True, help="Path to JSON list of owned Pokémon IDs")
     parser.add_argument("--family", type=Path, default=DEFAULT_FAMILY_PATH)
     parser.add_argument("--rates-url", default=DEFAULT_RATES_URL)
     return parser.parse_args()
