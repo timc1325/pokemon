@@ -3,6 +3,7 @@ import re
 import urllib.request
 from pathlib import Path
 
+import altair as alt
 import gspread
 import pandas as pd
 import streamlit as st
@@ -21,10 +22,48 @@ SHINY_RATES_URL = "https://shinyrates.com/data/rate"
 CARDS_PER_ROW = 8
 CARDS_PER_PAGE = 80
 
-FALLBACK_IMAGE = (
-    "https://raw.githubusercontent.com/PokeAPI/sprites"
-    "/master/sprites/pokemon/0.png"
+# jsDelivr serves the same PokeAPI sprite repo with better availability than
+# raw.githubusercontent.com (fewer timeouts / rate limits when loading many images).
+_SPRITES_CDN = (
+    "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon"
 )
+
+FALLBACK_IMAGE = f"{_SPRITES_CDN}/0.png"
+
+
+def _cdn_artwork_url(pokemon_id: int) -> str:
+    return f"{_SPRITES_CDN}/other/official-artwork/{int(pokemon_id)}.png"
+
+
+def _cdn_default_sprite_url(pokemon_id: int) -> str:
+    return f"{_SPRITES_CDN}/{int(pokemon_id)}.png"
+
+
+def _img_fallback_onerror(secondary_url: str, final_url: str) -> str:
+    """Chained client-side fallback when the primary sprite URL fails."""
+
+    def _js_single_quoted(url: str) -> str:
+        return url.replace("\\", "\\\\").replace("'", "\\'")
+
+    s2, s3 = _js_single_quoted(secondary_url), _js_single_quoted(final_url)
+    return (
+        "this.onerror=null;"
+        f"if(!this.dataset.imgfb){{this.dataset.imgfb='1';this.src='{s2}';}}"
+        f"else{{this.src='{s3}'}}"
+    )
+
+
+def pokemon_img_html(pokemon_id: int) -> str:
+    pid = int(pokemon_id)
+    primary = _cdn_artwork_url(pid)
+    secondary = _cdn_default_sprite_url(pid)
+    onerr = _img_fallback_onerror(secondary, FALLBACK_IMAGE)
+    return (
+        f'<img src="{primary}" alt="" width="96" height="96" '
+        f'decoding="async" loading="lazy" '
+        f'onerror="{onerr}"'
+        ">"
+    )
 
 FILTER_TAGS = [
     "Released", "Not Released", "Shundo", "Not Shundo", "Lucky", "Not Lucky",
@@ -431,7 +470,9 @@ def _get_worksheet():
         return ws
 
 
-def load_pokemon() -> pd.DataFrame:
+@st.cache_data(show_spinner=False)
+def load_pokemon(_csv_mtime: float) -> pd.DataFrame:
+    _ = _csv_mtime  # cache invalidates when pokemon.csv changes on disk
     df = pd.read_csv(POKEMON_PATH)
     expected = {"pokemon_id", "name", "root_id", "root_name", "image_url"}
     missing = expected - set(df.columns)
@@ -492,18 +533,19 @@ def ensure_collection_complete(
     return collection_df
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_released_ids_cached() -> frozenset[int]:
+    req = urllib.request.Request(
+        RELEASED_API_URL, headers={"User-Agent": "Mozilla/5.0"}
+    )
+    resp = urllib.request.urlopen(req, timeout=10)
+    data = json.loads(resp.read())
+    return frozenset(int(k) for k in data)
+
+
 def fetch_released_ids() -> set[int]:
-    if "released_ids" in st.session_state:
-        return st.session_state["released_ids"]
     try:
-        req = urllib.request.Request(
-            RELEASED_API_URL, headers={"User-Agent": "Mozilla/5.0"}
-        )
-        resp = urllib.request.urlopen(req, timeout=10)
-        data = json.loads(resp.read())
-        ids = {int(k) for k in data}
-        st.session_state["released_ids"] = ids
-        return ids
+        return set(_fetch_released_ids_cached())
     except Exception:
         return set()
 
@@ -520,23 +562,24 @@ def _parse_rate_value(rate_text: str) -> float:
     return 0.0
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def _fetch_shiny_rates_cached() -> pd.DataFrame:
+    req = urllib.request.Request(
+        SHINY_RATES_URL,
+        headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+    )
+    resp = urllib.request.urlopen(req, timeout=20)
+    data = json.loads(resp.read())
+    df = pd.DataFrame(data)
+    df["pokemon_id"] = df["id"].astype(int)
+    df["sample_size"] = df["total"].str.replace(",", "", regex=False).astype(int)
+    df["shiny_rate_value"] = df["rate"].map(_parse_rate_value)
+    return df[["pokemon_id", "rate", "sample_size", "shiny_rate_value"]]
+
+
 def fetch_shiny_rates() -> pd.DataFrame | None:
-    if "shiny_rates_df" in st.session_state:
-        return st.session_state["shiny_rates_df"]
     try:
-        req = urllib.request.Request(
-            SHINY_RATES_URL,
-            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-        )
-        resp = urllib.request.urlopen(req, timeout=20)
-        data = json.loads(resp.read())
-        df = pd.DataFrame(data)
-        df["pokemon_id"] = df["id"].astype(int)
-        df["sample_size"] = df["total"].str.replace(",", "", regex=False).astype(int)
-        df["shiny_rate_value"] = df["rate"].map(_parse_rate_value)
-        df = df[["pokemon_id", "rate", "sample_size", "shiny_rate_value"]]
-        st.session_state["shiny_rates_df"] = df
-        return df
+        return _fetch_shiny_rates_cached()
     except Exception:
         return None
 
@@ -576,7 +619,7 @@ def apply_filters(
     root_only: bool,
     show_family: bool = False,
 ) -> pd.DataFrame:
-    filtered = df.copy()
+    filtered = df
 
     if search:
         matched = filtered[
@@ -663,16 +706,11 @@ def render_card(
 
     badge_html = " ".join(parts)
 
-    image_url = row.get("image_url", "")
-    if pd.isna(image_url) or not image_url:
-        image_url = FALLBACK_IMAGE
-
     active = "pk-active" if toggle_tag and row.get(toggle_tag, False) else ""
 
     st.markdown(
         f'<div class="pk-card {active}">'
-        f'<img src="{image_url}" '
-        f'onerror="this.src=\'{FALLBACK_IMAGE}\'" loading="lazy">'
+        f'{pokemon_img_html(int(row["pokemon_id"]))}'
         f'<div class="pk-name">{row["name"]}</div>'
         f'<div class="pk-id">#{row["pokemon_id"]}</div>'
         f'<div class="pk-badges">{badge_html}</div>'
@@ -714,12 +752,140 @@ def render_grid(
                     render_card(page_df.iloc[idx], toggle_tag, collection_df)
 
 
+def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
+    _GLOW = {
+        "#10b981": "rgba(16,185,129,0.10)",
+        "#f59e0b": "rgba(245,158,11,0.10)",
+        "#3b82f6": "rgba(59,130,246,0.10)",
+        "#2a2a40": "none",
+    }
+
+    for i in range(0, len(filtered), CARDS_PER_ROW):
+        cols = st.columns(CARDS_PER_ROW)
+        for j, col in enumerate(cols):
+            idx = i + j
+            if idx < len(filtered):
+                row = filtered.iloc[idx]
+                with col:
+                    rate_val = row["shiny_rate_value"]
+                    if rate_val >= 1 / 100:
+                        accent = "#10b981"
+                    elif rate_val >= 1 / 300:
+                        accent = "#f59e0b"
+                    elif rate_val >= 1 / 500:
+                        accent = "#3b82f6"
+                    else:
+                        accent = "#2a2a40"
+                    badges_html = badge(row["rate"], accent)
+                    if row.get("shundo", False):
+                        badges_html += " " + badge("✦", "rgba(124,92,252,0.15)", "#a090ff")
+                    if row.get("lucky", False):
+                        badges_html += " " + badge("✦", "rgba(240,160,48,0.15)", "#ffc060")
+                    glow = _GLOW.get(accent, "none")
+                    shadow = f"box-shadow:0 -4px 20px {glow};" if glow != "none" else ""
+                    st.markdown(
+                        f'<div class="rate-card" style="border-top:2px solid {accent};{shadow}">'
+                        f'{pokemon_img_html(int(row["pokemon_id"]))}'
+                        f'<div class="rate-name">{row["name"]}</div>'
+                        f'<div class="rate-id">#{row["pokemon_id"]}</div>'
+                        f'<div class="rate-badges">{badges_html}</div>'
+                        f'<div class="rate-sample">n={row["sample_size"]:,}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+
+def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
+    """Horizontal bars of shiny probability; brighter bars = heavier sampling."""
+    if filtered.empty:
+        return
+
+    thr = float(filtered["sample_size"].quantile(0.75))
+    if thr < 1:
+        thr = 1.0
+
+    chart_df = filtered.copy()
+    chart_df["bar_label"] = (
+        "#" + chart_df["pokemon_id"].astype(int).astype(str) + " " + chart_df["name"].astype(str)
+    )
+    rv = chart_df["shiny_rate_value"]
+    chart_df["one_in"] = (1.0 / rv).where((rv > 0) & rv.notna()).round()
+
+    hi, lo = "Large sample (brighter)", "Standard"
+    chart_df["well_sampled"] = (chart_df["sample_size"] >= thr).map(
+        {True: hi, False: lo}
+    )
+
+    bar_height = 13
+    h = int(min(920, max(280, len(chart_df) * bar_height + 80)))
+
+    color_scale = alt.Scale(
+        domain=[lo, hi],
+        range=["#4f4f66", "#5eead4"],
+    )
+
+    chart = (
+        alt.Chart(chart_df)
+        .mark_bar(cornerRadiusEnd=3, height=10)
+        .encode(
+            x=alt.X(
+                "shiny_rate_value:Q",
+                title="Estimated shiny chance",
+                axis=alt.Axis(format=".2%", grid=True),
+            ),
+            y=alt.Y(
+                "bar_label:N",
+                sort="-x",
+                title=None,
+                axis=alt.Axis(labelLimit=260, labelFontSize=11),
+            ),
+            color=alt.Color(
+                "well_sampled:N",
+                scale=color_scale,
+                legend=alt.Legend(orient="top", title=None),
+            ),
+            tooltip=[
+                alt.Tooltip("name:N", title="Pokémon"),
+                alt.Tooltip("pokemon_id:Q", title="ID"),
+                alt.Tooltip("rate:N", title="Reported rate"),
+                alt.Tooltip(
+                    "shiny_rate_value:Q",
+                    title="Probability",
+                    format=".3%",
+                ),
+                alt.Tooltip("one_in:Q", title="≈ 1 in"),
+                alt.Tooltip("sample_size:Q", title="Sample n", format=","),
+            ],
+        )
+        .properties(height=h, width="container")
+        .configure_axis(gridColor="#ffffff10", domainColor="#ffffff18")
+        .configure_view(stroke=None)
+        .configure_axisX(labelColor="#c4c4d8", titleColor="#a7a7bf")
+        .configure_axisY(labelColor="#c4c4d8")
+        .configure_legend(labelColor="#c4c4d8")
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(
+        f"**Teal** bars are in the **top quartile** by sample size for this filtered list "
+        f"(n ≥ **{thr:,.0f}**). Larger *n* usually means a more stable estimate."
+    )
+
+
 def render_shiny_rates(merged: pd.DataFrame) -> None:
-    col_refresh, col_filter = st.columns([1, 3])
+    col_refresh, col_view, col_filter = st.columns([1, 2, 3])
     with col_refresh:
         if st.button("Refresh", key="refresh_shiny_rates"):
-            st.session_state.pop("shiny_rates_df", None)
+            _fetch_shiny_rates_cached.clear()
             st.rerun()
+    with col_view:
+        view_mode = st.radio(
+            "View",
+            ["Cards", "Bar chart"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="shiny_rates_view",
+        )
     with col_filter:
         shiny_filter_tags = st.multiselect(
             "Filter", FILTER_TAGS, default=["Not Shundo"], key="shiny_rate_filters"
@@ -757,50 +923,10 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
         unsafe_allow_html=True,
     )
 
-    _GLOW = {
-        "#10b981": "rgba(16,185,129,0.10)",
-        "#f59e0b": "rgba(245,158,11,0.10)",
-        "#3b82f6": "rgba(59,130,246,0.10)",
-        "#2a2a40": "none",
-    }
-
-    for i in range(0, len(filtered), CARDS_PER_ROW):
-        cols = st.columns(CARDS_PER_ROW)
-        for j, col in enumerate(cols):
-            idx = i + j
-            if idx < len(filtered):
-                row = filtered.iloc[idx]
-                with col:
-                    image_url = row.get("image_url", "")
-                    if pd.isna(image_url) or not image_url:
-                        image_url = FALLBACK_IMAGE
-                    rate_val = row["shiny_rate_value"]
-                    if rate_val >= 1 / 100:
-                        accent = "#10b981"
-                    elif rate_val >= 1 / 300:
-                        accent = "#f59e0b"
-                    elif rate_val >= 1 / 500:
-                        accent = "#3b82f6"
-                    else:
-                        accent = "#2a2a40"
-                    badges_html = badge(row["rate"], accent)
-                    if row.get("shundo", False):
-                        badges_html += " " + badge("✦", "rgba(124,92,252,0.15)", "#a090ff")
-                    if row.get("lucky", False):
-                        badges_html += " " + badge("✦", "rgba(240,160,48,0.15)", "#ffc060")
-                    glow = _GLOW.get(accent, "none")
-                    shadow = f"box-shadow:0 -4px 20px {glow};" if glow != "none" else ""
-                    st.markdown(
-                        f'<div class="rate-card" style="border-top:2px solid {accent};{shadow}">'
-                        f'<img src="{image_url}" '
-                        f'onerror="this.src=\'{FALLBACK_IMAGE}\'" loading="lazy">'
-                        f'<div class="rate-name">{row["name"]}</div>'
-                        f'<div class="rate-id">#{row["pokemon_id"]}</div>'
-                        f'<div class="rate-badges">{badges_html}</div>'
-                        f'<div class="rate-sample">n={row["sample_size"]:,}</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
+    if view_mode == "Bar chart":
+        _render_shiny_rate_bar_chart(filtered)
+    else:
+        _render_shiny_rate_cards(filtered)
 
 
 # ---------------------------------------------------------------------------
@@ -904,7 +1030,7 @@ def main():
     )
     inject_css()
 
-    pokemon_df = load_pokemon()
+    pokemon_df = load_pokemon(POKEMON_PATH.stat().st_mtime)
     collection_df = load_collection()
     collection_df = ensure_collection_complete(pokemon_df, collection_df)
     merged = merge_data(pokemon_df, collection_df)

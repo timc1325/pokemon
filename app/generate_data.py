@@ -15,8 +15,8 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 FAMILY_CSV = DATA_DIR / "pokemon_family.csv"
 
 IMAGE_URL_TEMPLATE = (
-    "https://raw.githubusercontent.com/PokeAPI/sprites"
-    "/master/sprites/pokemon/other/official-artwork/{}.png"
+    "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon"
+    "/other/official-artwork/{}.png"
 )
 
 UNTRADEABLE_IDS = {
