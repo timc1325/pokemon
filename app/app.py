@@ -934,7 +934,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         .configure_concat(spacing=6)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    # theme=None: skip Streamlit’s Vega theme merge each rerun (can reduce chart flash).
+    st.altair_chart(chart, use_container_width=True, theme=None)
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
@@ -943,43 +944,24 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
 
 
 def render_shiny_rates(merged: pd.DataFrame) -> None:
-    if "live_rates_tags" not in st.session_state:
-        st.session_state.live_rates_tags = ["Not Shundo"]
-    if "live_rates_view" not in st.session_state:
-        st.session_state.live_rates_view = "Bar chart"
-
-    col_refresh, col_rest = st.columns([1, 8])
+    col_refresh, col_view, col_filter = st.columns([1, 2, 3])
     with col_refresh:
         if st.button("Refresh", key="refresh_shiny_rates"):
             _fetch_shiny_rates_cached.clear()
             st.rerun()
-    with col_rest:
-        with st.form("live_rates_filter_form", clear_on_submit=False):
-            f_view, f_tags, f_apply = st.columns([2, 4, 1])
-            with f_view:
-                view_pick = st.radio(
-                    "View",
-                    ["Cards", "Bar chart"],
-                    index=1 if st.session_state.live_rates_view == "Bar chart" else 0,
-                    horizontal=True,
-                    label_visibility="collapsed",
-                )
-            with f_tags:
-                tags_pick = st.multiselect(
-                    "Filter",
-                    FILTER_TAGS,
-                    default=st.session_state.live_rates_tags,
-                )
-            with f_apply:
-                submitted = st.form_submit_button("Apply")
-    if submitted:
-        st.session_state.live_rates_view = view_pick
-        st.session_state.live_rates_tags = list(tags_pick)
-
-    view_mode = st.session_state.live_rates_view
-    shiny_filter_tags = list(st.session_state.live_rates_tags)
-
-    st.caption("After changing filters or view, click **Apply** to update (avoids chart flicker while editing).")
+    with col_view:
+        view_mode = st.radio(
+            "View",
+            ["Cards", "Bar chart"],
+            index=1,
+            horizontal=True,
+            label_visibility="collapsed",
+            key="shiny_rates_view",
+        )
+    with col_filter:
+        shiny_filter_tags = st.multiselect(
+            "Filter", FILTER_TAGS, default=["Not Shundo"], key="shiny_rate_filters"
+        )
 
     rates_df = fetch_shiny_rates()
     if rates_df is None:
