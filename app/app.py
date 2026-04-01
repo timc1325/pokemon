@@ -827,8 +827,6 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     )
     chart_df["sprite_url"] = chart_df["pokemon_id"].astype(int).map(_cdn_default_sprite_url)
     chart_df["icon_x"] = 0.0
-    rv = chart_df["shiny_rate_value"]
-    chart_df["one_in"] = (1.0 / rv).where((rv > 0) & rv.notna()).round()
 
     lo = f"Standard (n < {thr:,.0f})"
     hi = f"Large sample (n ≥ {thr:,.0f})"
@@ -874,7 +872,6 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         alt.Tooltip("pokemon_id:Q", title="ID"),
         alt.Tooltip("rate:N", title="Reported rate"),
         alt.Tooltip("shiny_rate_value:Q", title="Probability", format=".3%"),
-        alt.Tooltip("one_in:Q", title="≈ 1 in"),
         alt.Tooltip("sample_size:Q", title="Sample n", format=","),
     ]
 
