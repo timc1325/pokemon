@@ -32,6 +32,7 @@ CHART_BG = "#08080e"
 CHART_GRID = "#ffffff0d"
 CHART_MUTED = "#3d3d52"
 CHART_ACCENT_HI_N = "#5eead4"
+CHART_ACCENT_NP = "#e879f9"  # n×p > 1 (expected # of shinies in sample > 1)
 
 # jsDelivr serves the same PokeAPI sprite repo with better availability than
 # raw.githubusercontent.com (fewer timeouts / rate limits when loading many images).
@@ -830,8 +831,15 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
 
     lo = f"Standard (n < {thr:,.0f})"
     hi = f"Large sample (n ≥ {thr:,.0f})"
-    chart_df["well_sampled"] = (chart_df["sample_size"] >= thr).map(
-        {True: hi, False: lo}
+    hi_np = "n×rate > 1"
+    chart_df["bar_tier"] = lo
+    chart_df.loc[chart_df["sample_size"] >= thr, "bar_tier"] = hi
+    chart_df.loc[
+        chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1, "bar_tier"
+    ] = hi_np
+
+    chart_df["np_exp_shinies"] = (
+        chart_df["sample_size"] * chart_df["shiny_rate_value"]
     )
 
     # Custom Y order: list bar_label from best to worst rate so highest odds are at the top.
@@ -863,8 +871,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     )
 
     color_scale = alt.Scale(
-        domain=[lo, hi],
-        range=[CHART_MUTED, CHART_ACCENT_HI_N],
+        domain=[lo, hi, hi_np],
+        range=[CHART_MUTED, CHART_ACCENT_HI_N, CHART_ACCENT_NP],
     )
 
     tooltip = [
@@ -873,6 +881,11 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         alt.Tooltip("rate:N", title="Reported rate"),
         alt.Tooltip("shiny_rate_value:Q", title="Probability", format=".3%"),
         alt.Tooltip("sample_size:Q", title="Sample n", format=","),
+        alt.Tooltip(
+            "np_exp_shinies:Q",
+            title="n×rate (≈ expected shinies in sample)",
+            format=".2f",
+        ),
     ]
 
     icon_chart = (
@@ -912,7 +925,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
             ),
             y=y_bars,
             color=alt.Color(
-                "well_sampled:N",
+                "bar_tier:N",
                 scale=color_scale,
                 legend=alt.Legend(
                     orient="top",
@@ -939,7 +952,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"Teal bars: **n ≥ {thr:,.0f}** (see legend labels)."
+        f"**Teal**: n ≥ **{thr:,.0f}**. **Fuchsia**: **n × rate > 1** (expected shiny count in the sample)."
     )
 
 
