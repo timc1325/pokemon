@@ -158,13 +158,19 @@ def apply_filters(
     gen_opt: str,
     sort_opt: str,
     root_only: bool,
+    show_family: bool = False,
 ) -> pd.DataFrame:
     filtered = df.copy()
 
     if search:
-        filtered = filtered[
+        matched = filtered[
             filtered["name"].str.contains(search, case=False, na=False)
         ]
+        if show_family and not matched.empty:
+            matched_families = set(matched["family_id"])
+            filtered = filtered[filtered["family_id"].isin(matched_families)]
+        else:
+            filtered = matched
 
     mask_map = {
         "Released": ("released", False),
@@ -318,6 +324,7 @@ def render_sidebar_filters(merged: pd.DataFrame):
     sort_opt = st.sidebar.selectbox("Sort", SORT_OPTIONS)
 
     root_only = st.sidebar.checkbox("Show only root representatives")
+    show_family = st.sidebar.checkbox("Show all family members")
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("Toggle Mode")
@@ -325,7 +332,7 @@ def render_sidebar_filters(merged: pd.DataFrame):
     toggle_mode = st.sidebar.selectbox("Click cards to toggle", toggle_options)
     toggle_tag = None if toggle_mode == "Off" else toggle_mode.lower()
 
-    return search, filter_tags, gen_opt, sort_opt, root_only, toggle_tag
+    return search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag
 
 
 def render_sidebar_editor(merged: pd.DataFrame, collection_df: pd.DataFrame):
@@ -388,8 +395,8 @@ def main():
     collection_df = ensure_collection_complete(pokemon_df, collection_df)
     merged = merge_data(pokemon_df, collection_df)
 
-    search, filter_tags, gen_opt, sort_opt, root_only, toggle_tag = render_sidebar_filters(merged)
-    filtered = apply_filters(merged, search, filter_tags, gen_opt, sort_opt, root_only)
+    search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_sidebar_filters(merged)
+    filtered = apply_filters(merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family)
 
     total_pages = max(1, -(-len(filtered) // CARDS_PER_PAGE))
 
