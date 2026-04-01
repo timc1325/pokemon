@@ -24,9 +24,7 @@ CARDS_PER_PAGE = 80
 
 # Live Rates — shared accents (card borders/badges and bar chart tiers)
 LIVE_RATE_GREEN = "#10b981"
-LIVE_RATE_AMBER = "#f59e0b"
 LIVE_RATE_BLUE = "#3b82f6"
-LIVE_RATE_DIM = "#2a2a40"
 
 # Live Rates bar chart: best-odds only, short list for readability
 BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
@@ -35,7 +33,7 @@ BAR_CHART_LARGE_SAMPLE_Q = 0.90
 BAR_CHART_LARGE_SAMPLE_MIN_N = 8_000
 CHART_BG = "#08080e"
 CHART_GRID = "#ffffff0d"
-CHART_MUTED = "#3d3d52"  # bar “standard” fill (slightly above LIVE_RATE_DIM for contrast on bg)
+CHART_MUTED = "#3d3d52"  # bar “standard” fill + card border when not green/blue tier
 CHART_ACCENT_HI_N = LIVE_RATE_GREEN  # large sample — same green as best card tier
 CHART_ACCENT_NP = LIVE_RATE_BLUE  # >1 expected shiny — same blue as card 1/500+ tier
 
@@ -769,12 +767,36 @@ def render_grid(
                     render_card(page_df.iloc[idx], toggle_tag, collection_df)
 
 
+def _live_rate_bar_threshold(filtered: pd.DataFrame) -> float | None:
+    """Same n threshold as the bar chart (quantile on top-N list by rate)."""
+    elig = filtered[filtered["shiny_rate_value"] >= BAR_CHART_MIN_PROB].copy()
+    if elig.empty:
+        return None
+    top = elig.sort_values("shiny_rate_value", ascending=False).head(BAR_CHART_TOP_N)
+    q_thr = float(top["sample_size"].quantile(BAR_CHART_LARGE_SAMPLE_Q))
+    return max(q_thr, float(BAR_CHART_LARGE_SAMPLE_MIN_N), 1.0)
+
+
+def _live_rate_bar_accent(
+    rate_val: float, sample_size: float, thr: float | None
+) -> str:
+    """Border/badge color: matches bar chart tiers (green / blue / muted)."""
+    if thr is None or float(rate_val) < BAR_CHART_MIN_PROB:
+        return CHART_MUTED
+    n, p = float(sample_size), float(rate_val)
+    if n >= thr:
+        return LIVE_RATE_GREEN
+    if n * p > 1:
+        return LIVE_RATE_BLUE
+    return CHART_MUTED
+
+
 def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
+    thr = _live_rate_bar_threshold(filtered)
     _GLOW = {
         LIVE_RATE_GREEN: "rgba(16,185,129,0.10)",
-        LIVE_RATE_AMBER: "rgba(245,158,11,0.10)",
         LIVE_RATE_BLUE: "rgba(59,130,246,0.10)",
-        LIVE_RATE_DIM: "none",
+        CHART_MUTED: "none",
     }
 
     for i in range(0, len(filtered), CARDS_PER_ROW):
@@ -784,15 +806,9 @@ def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
             if idx < len(filtered):
                 row = filtered.iloc[idx]
                 with col:
-                    rate_val = row["shiny_rate_value"]
-                    if rate_val >= 1 / 100:
-                        accent = LIVE_RATE_GREEN
-                    elif rate_val >= 1 / 300:
-                        accent = LIVE_RATE_AMBER
-                    elif rate_val >= 1 / 500:
-                        accent = LIVE_RATE_BLUE
-                    else:
-                        accent = LIVE_RATE_DIM
+                    accent = _live_rate_bar_accent(
+                        row["shiny_rate_value"], row["sample_size"], thr
+                    )
                     badges_html = badge(row["rate"], accent)
                     glow = _GLOW.get(accent, "none")
                     shadow = f"box-shadow:0 -4px 20px {glow};" if glow != "none" else ""
@@ -810,18 +826,16 @@ def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
 
 def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     """Short list of best reported rates; icons + bars on app background colors."""
-    elig = filtered[filtered["shiny_rate_value"] >= BAR_CHART_MIN_PROB].copy()
-    if elig.empty:
+    thr = _live_rate_bar_threshold(filtered)
+    if thr is None:
         st.info(
             f"No Pokémon in this filter with rate ≥ **1 in {round(1 / BAR_CHART_MIN_PROB)}** "
             "on the live list. Loosen filters or use **Cards**."
         )
         return
 
+    elig = filtered[filtered["shiny_rate_value"] >= BAR_CHART_MIN_PROB].copy()
     elig = elig.sort_values("shiny_rate_value", ascending=False).head(BAR_CHART_TOP_N)
-
-    q_thr = float(elig["sample_size"].quantile(BAR_CHART_LARGE_SAMPLE_Q))
-    thr = max(q_thr, float(BAR_CHART_LARGE_SAMPLE_MIN_N), 1.0)
 
     chart_df = elig.copy()
     chart_df["bar_label"] = (
