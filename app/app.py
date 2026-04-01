@@ -170,17 +170,14 @@ def fetch_shiny_rates() -> pd.DataFrame | None:
         return None
 
 
-def get_shiny_targets(
+def get_shiny_rates_merged(
     merged: pd.DataFrame, rates_df: pd.DataFrame
 ) -> pd.DataFrame:
-    owned_ids = set(merged.loc[merged["shundo"], "pokemon_id"])
-    owned_families = set(merged.loc[merged["pokemon_id"].isin(owned_ids), "family_id"])
-    targets = merged.merge(rates_df, on="pokemon_id", how="inner")
-    targets = targets[~targets["family_id"].isin(owned_families)].copy()
-    targets = targets.sort_values(
+    result = merged.merge(rates_df, on="pokemon_id", how="inner")
+    result = result.sort_values(
         ["shiny_rate_value", "sample_size"], ascending=[False, False]
     ).reset_index(drop=True)
-    return targets
+    return result
 
 
 def merge_data(
@@ -356,34 +353,56 @@ def render_grid(
 
 
 def render_shiny_rates(merged: pd.DataFrame) -> None:
-    if st.button("🔄 Refresh Rates", key="refresh_shiny_rates"):
-        st.session_state.pop("shiny_rates_df", None)
-        st.rerun()
+    col_refresh, col_filter = st.columns([1, 3])
+    with col_refresh:
+        if st.button("🔄 Refresh Rates", key="refresh_shiny_rates"):
+            st.session_state.pop("shiny_rates_df", None)
+            st.rerun()
+    with col_filter:
+        shiny_filter_tags = st.multiselect(
+            "Filter", FILTER_TAGS, default=[], key="shiny_rate_filters"
+        )
 
     rates_df = fetch_shiny_rates()
     if rates_df is None:
         st.warning("Could not fetch live shiny rates from shinyrates.com")
         return
 
-    targets = get_shiny_targets(merged, rates_df)
-    if targets.empty:
-        st.success("You have shundos for every family with live boosted rates!")
+    all_rates = get_shiny_rates_merged(merged, rates_df)
+    if all_rates.empty:
+        st.info("No live shiny rate data available.")
         return
+
+    filtered = all_rates.copy()
+    mask_map = {
+        "Released": ("released", False),
+        "Not Released": ("released", True),
+        "Shundo": ("shundo", False),
+        "Not Shundo": ("shundo", True),
+        "Lucky": ("lucky", False),
+        "Not Lucky": ("lucky", True),
+        "Tradeable": ("tradeable", False),
+        "Untradeable": ("tradeable", True),
+    }
+    for tag in shiny_filter_tags:
+        if tag in mask_map:
+            col, negate = mask_map[tag]
+            if col in filtered.columns:
+                filtered = filtered[~filtered[col] if negate else filtered[col]]
 
     st.markdown(
         f'<div style="font-size:13px;padding:4px 0;margin-bottom:8px;">'
-        f'<b>{len(targets)}</b> shiny targets you don\'t have yet, '
-        f'sorted by highest shiny rate'
+        f'<b>{len(filtered)}</b> Pokémon with live shiny rates'
         f'</div>',
         unsafe_allow_html=True,
     )
 
-    for i in range(0, len(targets), CARDS_PER_ROW):
+    for i in range(0, len(filtered), CARDS_PER_ROW):
         cols = st.columns(CARDS_PER_ROW)
         for j, col in enumerate(cols):
             idx = i + j
-            if idx < len(targets):
-                row = targets.iloc[idx]
+            if idx < len(filtered):
+                row = filtered.iloc[idx]
                 with col:
                     image_url = row.get("image_url", "")
                     if pd.isna(image_url) or not image_url:
@@ -399,6 +418,11 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                         rate_color = "#2196F3"
                     else:
                         rate_color = "#9E9E9E"
+                    badges_html = badge(rate_str, rate_color)
+                    if row.get("shundo", False):
+                        badges_html += " " + badge("🌟", "#9C27B0")
+                    if row.get("lucky", False):
+                        badges_html += " " + badge("🍀", "#FF9800")
                     st.markdown(
                         f"""
                         <div style="border:2px solid {rate_color};border-radius:8px;
@@ -410,9 +434,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
                             <div style="font-weight:bold;margin-top:3px;font-size:12px;">
                                 {row['name']}</div>
                             <div style="color:#666;font-size:10px;">#{row['pokemon_id']}</div>
-                            <div style="margin-top:4px;">
-                                {badge(rate_str, rate_color)}
-                            </div>
+                            <div style="margin-top:4px;">{badges_html}</div>
                             <div style="color:#999;font-size:9px;margin-top:2px;">
                                 sample: {sample:,}</div>
                         </div>
