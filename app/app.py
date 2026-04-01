@@ -196,92 +196,92 @@ def inject_css():
 
     /* ── Collection cards ── */
     .pk-card {
-        background: rgba(255,255,255,0.018); border-radius: 14px;
-        padding: 20px 8px 14px; text-align: center; min-height: 155px;
+        background: rgba(255,255,255,0.018); border-radius: 10px;
+        padding: 12px 6px 8px; text-align: center; min-height: 110px;
         border: 1px solid rgba(255,255,255,0.025);
         transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     }
     .pk-card:hover {
         background: rgba(255,255,255,0.04);
         border-color: rgba(255,255,255,0.06);
-        transform: translateY(-4px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     .pk-card.pk-active {
         border-color: rgba(124,92,252,0.25);
         background: rgba(124,92,252,0.05);
-        box-shadow: 0 0 30px rgba(124,92,252,0.06);
+        box-shadow: 0 0 20px rgba(124,92,252,0.06);
     }
     .pk-card img {
-        width: 68px; height: 68px; object-fit: contain;
-        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        width: 48px; height: 48px; object-fit: contain;
+        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
         transition: transform 0.3s ease;
     }
-    .pk-card:hover img { transform: scale(1.1); }
+    .pk-card:hover img { transform: scale(1.08); }
     .pk-name {
         font-family: 'Inter', sans-serif; font-weight: 600;
-        font-size: 12px; color: #d0d0e4; margin-top: 8px;
+        font-size: 10px; color: #d0d0e4; margin-top: 5px;
         line-height: 1.3;
     }
     .pk-id {
-        font-family: 'Inter', sans-serif; font-size: 10px;
-        color: #2e2e42; margin-top: 2px; font-weight: 500;
+        font-family: 'Inter', sans-serif; font-size: 8.5px;
+        color: #2e2e42; margin-top: 1px; font-weight: 500;
     }
-    .pk-badges { margin-top: 6px; min-height: 18px; line-height: 2; }
+    .pk-badges { margin-top: 4px; min-height: 14px; line-height: 1.8; }
     .pk-badge {
-        display: inline-block; font-size: 8px; font-weight: 600;
-        letter-spacing: 0.06em; padding: 2px 7px; border-radius: 3px;
+        display: inline-block; font-size: 7px; font-weight: 600;
+        letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px;
         margin: 1px; text-transform: uppercase;
         font-family: 'Inter', sans-serif;
     }
 
     /* ── Rate cards ── */
     .rate-card {
-        background: rgba(255,255,255,0.018); border-radius: 14px;
-        padding: 20px 8px 14px; text-align: center; min-height: 160px;
+        background: rgba(255,255,255,0.018); border-radius: 10px;
+        padding: 12px 6px 8px; text-align: center; min-height: 120px;
         border: 1px solid rgba(255,255,255,0.025);
         transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     }
     .rate-card:hover {
         background: rgba(255,255,255,0.04);
-        transform: translateY(-4px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     .rate-card img {
-        width: 60px; height: 60px; object-fit: contain;
-        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        width: 44px; height: 44px; object-fit: contain;
+        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
         transition: transform 0.3s ease;
     }
-    .rate-card:hover img { transform: scale(1.1); }
+    .rate-card:hover img { transform: scale(1.08); }
     .rate-name {
         font-family: 'Inter', sans-serif; font-weight: 600;
-        font-size: 12px; color: #d0d0e4; margin-top: 8px;
+        font-size: 10px; color: #d0d0e4; margin-top: 5px;
     }
     .rate-id {
-        font-family: 'Inter', sans-serif; font-size: 10px;
-        color: #2e2e42; margin-top: 2px;
+        font-family: 'Inter', sans-serif; font-size: 8.5px;
+        color: #2e2e42; margin-top: 1px;
     }
-    .rate-badges { margin-top: 6px; line-height: 2; }
+    .rate-badges { margin-top: 4px; line-height: 1.8; }
     .rate-sample {
-        font-family: 'Inter', sans-serif; font-size: 9px;
-        color: #222236; margin-top: 3px; letter-spacing: 0.02em;
+        font-family: 'Inter', sans-serif; font-size: 8px;
+        color: #222236; margin-top: 2px; letter-spacing: 0.02em;
     }
 
     /* ── Hero stats ── */
     .hero-stats {
-        display: flex; gap: 40px; padding: 12px 0 16px;
+        display: flex; gap: 32px; padding: 8px 0 12px;
         align-items: flex-end;
     }
     .hero-stat { display: flex; flex-direction: column; }
     .hero-val {
-        font-family: 'Inter', sans-serif; font-size: 28px;
+        font-family: 'Inter', sans-serif; font-size: 22px;
         font-weight: 700; color: #e0e0f0; line-height: 1;
         letter-spacing: -0.02em;
     }
     .hero-label {
-        font-family: 'Inter', sans-serif; font-size: 9px;
+        font-family: 'Inter', sans-serif; font-size: 8px;
         font-weight: 600; color: #2e2e42; text-transform: uppercase;
-        letter-spacing: 0.12em; margin-top: 6px;
+        letter-spacing: 0.12em; margin-top: 4px;
     }
 
     /* ── Page nav ── */
@@ -327,6 +327,70 @@ def inject_css():
         background: rgba(255,255,255,0.02) !important;
         border: 1px solid rgba(255,255,255,0.03) !important;
         color: #606078 !important; border-radius: 8px !important;
+    }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 768px) {
+        .block-container { padding: 0.5rem 0.6rem 0.5rem; }
+
+        /* Card grid rows (5+ children): force 4 per row */
+        [data-testid="stHorizontalBlock"]:has(> :nth-child(5)) {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+        }
+        [data-testid="stHorizontalBlock"]:has(> :nth-child(5)) > [data-testid="stColumn"] {
+            flex: 0 0 calc(25% - 3px) !important;
+            max-width: calc(25% - 3px) !important;
+            min-width: 0 !important;
+        }
+
+        /* Ultra-compact cards */
+        .pk-card {
+            padding: 8px 3px 5px; min-height: 72px;
+            border-radius: 8px;
+        }
+        .pk-card img { width: 34px; height: 34px; }
+        .pk-card:hover { transform: none; box-shadow: none; }
+        .pk-card:hover img { transform: none; }
+        .pk-name { font-size: 8px; margin-top: 3px; }
+        .pk-id { font-size: 7px; }
+        .pk-badges { margin-top: 2px; min-height: 10px; line-height: 1.5; }
+        .pk-badge { font-size: 6px; padding: 1px 3px; }
+
+        .rate-card {
+            padding: 8px 3px 5px; min-height: 80px;
+            border-radius: 8px;
+        }
+        .rate-card img { width: 30px; height: 30px; }
+        .rate-card:hover { transform: none; box-shadow: none; }
+        .rate-card:hover img { transform: none; }
+        .rate-name { font-size: 8px; margin-top: 3px; }
+        .rate-id { font-size: 7px; }
+        .rate-badges { margin-top: 2px; line-height: 1.5; }
+        .rate-sample { font-size: 6px; }
+
+        /* Compact stats */
+        .hero-stats { gap: 20px; padding: 4px 0 8px; }
+        .hero-val { font-size: 18px; }
+        .hero-label { font-size: 7px; margin-top: 2px; }
+
+        /* Compact brand */
+        .brand { padding: 0 0 6px; }
+        .brand-title { font-size: 15px; }
+        .brand-sub { font-size: 8px; margin-left: 8px; }
+
+        /* Compact tabs */
+        .stTabs [data-baseweb="tab"] {
+            padding: 6px 14px; font-size: 9px;
+        }
+
+        /* Compact nav/labels */
+        .page-info { font-size: 9px; }
+        .count-label { font-size: 9px; }
+
+        /* Smaller buttons */
+        .stButton > button { font-size: 9px; padding: 3px 8px; }
     }
     </style>
     """,
