@@ -301,15 +301,15 @@ def inject_css():
         font-family: 'Inter', sans-serif;
     }
 
-    /* ── Rate cards ── */
+    /* ── Rate cards (Live Rates) — same base fill as bar chart / --bg-main ── */
     .rate-card {
-        background: rgba(255,255,255,0.018); border-radius: 10px;
+        background: var(--bg-main) !important; border-radius: 10px;
         padding: 12px 6px 8px; text-align: center; min-height: 120px;
         border: 1px solid rgba(255,255,255,0.025);
         transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
     }
     .rate-card:hover {
-        background: rgba(255,255,255,0.04);
+        background: var(--bg-main) !important;
         transform: translateY(-3px);
         box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
@@ -794,10 +794,6 @@ def _render_shiny_rate_cards(filtered: pd.DataFrame) -> None:
                     else:
                         accent = LIVE_RATE_DIM
                     badges_html = badge(row["rate"], accent)
-                    if row.get("shundo", False):
-                        badges_html += " " + badge("✦", "rgba(124,92,252,0.15)", "#a090ff")
-                    if row.get("lucky", False):
-                        badges_html += " " + badge("✦", "rgba(240,160,48,0.15)", "#ffc060")
                     glow = _GLOW.get(accent, "none")
                     shadow = f"box-shadow:0 -4px 20px {glow};" if glow != "none" else ""
                     st.markdown(
