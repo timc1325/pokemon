@@ -13,8 +13,6 @@ from google.oauth2.service_account import Credentials
 
 DATA_DIR = Path(__file__).parent / "data"
 POKEMON_PATH = DATA_DIR / "pokemon.csv"
-COLLECTION_PATH = DATA_DIR / "collection.csv"
-RELEASED_CACHE_PATH = DATA_DIR / "released.json"
 
 RELEASED_API_URL = "https://pogoapi.net/api/v1/released_pokemon.json"
 
@@ -40,10 +38,6 @@ GSHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 # ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
-
-
-def _use_gsheets() -> bool:
-    return "gcp_service_account" in st.secrets and "sheet_id" in st.secrets
 
 
 def _get_gsheet_client():
@@ -75,38 +69,30 @@ def load_pokemon() -> pd.DataFrame:
 
 
 def load_collection() -> pd.DataFrame:
-    if _use_gsheets():
-        try:
-            ws = _get_worksheet()
-            records = ws.get_all_records()
-            if not records:
-                return pd.DataFrame(columns=["pokemon_id", "shundo", "lucky"])
-            df = pd.DataFrame(records)
-            df["pokemon_id"] = df["pokemon_id"].astype(int)
-            for col in ["shundo", "lucky"]:
-                df[col] = df[col].astype(str).str.upper().isin(["TRUE", "1"])
-            return df
-        except Exception as e:
-            st.sidebar.warning(f"Sheets read failed, using local: {e}")
-    if not COLLECTION_PATH.exists():
-        return pd.DataFrame(columns=["pokemon_id", "shundo", "lucky"])
-    df = pd.read_csv(COLLECTION_PATH)
-    for col in ["shundo", "lucky"]:
-        df[col] = df[col].astype(bool)
-    return df
+    try:
+        ws = _get_worksheet()
+        records = ws.get_all_records()
+        if not records:
+            return pd.DataFrame(columns=["pokemon_id", "shundo", "lucky"])
+        df = pd.DataFrame(records)
+        df["pokemon_id"] = df["pokemon_id"].astype(int)
+        for col in ["shundo", "lucky"]:
+            df[col] = df[col].astype(str).str.upper().isin(["TRUE", "1"])
+        return df
+    except Exception as e:
+        st.error(f"Failed to load collection from Google Sheets: {e}")
+        st.stop()
 
 
 def save_collection(df: pd.DataFrame) -> None:
-    df.to_csv(COLLECTION_PATH, index=False)
-    if _use_gsheets():
-        try:
-            ws = _get_worksheet()
-            ws.clear()
-            header = ["pokemon_id", "shundo", "lucky"]
-            rows = df[["pokemon_id", "shundo", "lucky"]].values.tolist()
-            ws.update(f"A1:C{len(rows) + 1}", [header] + rows)
-        except Exception as e:
-            st.sidebar.warning(f"Sheets write failed: {e}")
+    try:
+        ws = _get_worksheet()
+        ws.clear()
+        header = ["pokemon_id", "shundo", "lucky"]
+        rows = df[["pokemon_id", "shundo", "lucky"]].values.tolist()
+        ws.update(f"A1:C{len(rows) + 1}", [header] + rows)
+    except Exception as e:
+        st.error(f"Failed to save to Google Sheets: {e}")
 
 
 def ensure_collection_complete(
@@ -129,6 +115,8 @@ def ensure_collection_complete(
 
 
 def fetch_released_ids() -> set[int]:
+    if "released_ids" in st.session_state:
+        return st.session_state["released_ids"]
     try:
         req = urllib.request.Request(
             RELEASED_API_URL, headers={"User-Agent": "Mozilla/5.0"}
@@ -136,11 +124,9 @@ def fetch_released_ids() -> set[int]:
         resp = urllib.request.urlopen(req, timeout=10)
         data = json.loads(resp.read())
         ids = {int(k) for k in data}
-        RELEASED_CACHE_PATH.write_text(json.dumps(sorted(ids)))
+        st.session_state["released_ids"] = ids
         return ids
     except Exception:
-        if RELEASED_CACHE_PATH.exists():
-            return {int(i) for i in json.loads(RELEASED_CACHE_PATH.read_text())}
         return set()
 
 
