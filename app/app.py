@@ -832,15 +832,12 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     lo = f"Standard (n < {thr:,.0f})"
     hi = f"Large sample (n ≥ {thr:,.0f})"
     hi_np = "n×rate > 1"
+    mask_teal = chart_df["sample_size"] >= thr
+    mask_np = chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1
+    # Teal first; only if not teal, then fuchsia when n×rate > 1; else standard.
     chart_df["bar_tier"] = lo
-    chart_df.loc[chart_df["sample_size"] >= thr, "bar_tier"] = hi
-    chart_df.loc[
-        chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1, "bar_tier"
-    ] = hi_np
-
-    chart_df["np_exp_shinies"] = (
-        chart_df["sample_size"] * chart_df["shiny_rate_value"]
-    )
+    chart_df.loc[mask_np & ~mask_teal, "bar_tier"] = hi_np
+    chart_df.loc[mask_teal, "bar_tier"] = hi
 
     # Custom Y order: list bar_label from best to worst rate so highest odds are at the top.
     bar_labels_y_order = (
@@ -881,11 +878,6 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         alt.Tooltip("rate:N", title="Reported rate"),
         alt.Tooltip("shiny_rate_value:Q", title="Probability", format=".3%"),
         alt.Tooltip("sample_size:Q", title="Sample n", format=","),
-        alt.Tooltip(
-            "np_exp_shinies:Q",
-            title="n×rate (≈ expected shinies in sample)",
-            format=".2f",
-        ),
     ]
 
     icon_chart = (
