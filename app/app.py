@@ -836,10 +836,9 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
         {True: hi, False: lo}
     )
 
-    # Vega-Lite: first categories in `sort` sit lower on the y-axis; list rows
-    # from lowest to highest shiny rate so the best odds appear at the top.
+    # Custom Y order: list bar_label from best to worst rate so highest odds are at the top.
     bar_labels_y_order = (
-        chart_df.sort_values("shiny_rate_value", ascending=True)["bar_label"].tolist()
+        chart_df.sort_values("shiny_rate_value", ascending=False)["bar_label"].tolist()
     )
 
     row_step = 20
@@ -868,10 +867,6 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     color_scale = alt.Scale(
         domain=[lo, hi],
         range=[CHART_MUTED, CHART_ACCENT_HI_N],
-    )
-    sample_legend_title = (
-        f"Teal = max({BAR_CHART_LARGE_SAMPLE_Q:.0%} quantile here, "
-        f"{BAR_CHART_LARGE_SAMPLE_MIN_N:,} min)"
     )
 
     tooltip = [
@@ -924,8 +919,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
                 scale=color_scale,
                 legend=alt.Legend(
                     orient="top",
-                    title=sample_legend_title,
-                    titleColor="#a7a7bf",
+                    title=None,
                     labelColor="#d8d8e8",
                     symbolType="square",
                 ),
@@ -947,8 +941,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"Legend reflects **n ≥ {thr:,.0f}** for teal (max of **{BAR_CHART_LARGE_SAMPLE_Q:.0%}** "
-        f"quantile on this list and **{BAR_CHART_LARGE_SAMPLE_MIN_N:,}**)."
+        f"Teal bars: **n ≥ {thr:,.0f}** (see legend labels)."
     )
 
 
