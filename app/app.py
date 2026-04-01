@@ -122,6 +122,10 @@ def inject_css():
         background: rgba(124,92,252,0.1) !important;
         border-radius: 4px !important; color: #9080e0 !important;
     }
+    /* Prevent multiselect first tag left-clip from border-radius */
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+        padding-left: 8px !important;
+    }
     label { color: #404058 !important; font-size: 11px !important; }
 
     /* ── Checkbox ── */
