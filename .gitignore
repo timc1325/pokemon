@@ -1,0 +1,8 @@
+# Secrets
+localapp/.streamlit/secrets.toml
+unified-post-492005-r5-*.json
+
+# Python
+__pycache__/
+*.pyc
+.env
