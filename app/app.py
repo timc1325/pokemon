@@ -356,6 +356,10 @@ def render_grid(
 
 
 def render_shiny_rates(merged: pd.DataFrame) -> None:
+    if st.button("🔄 Refresh Rates", key="refresh_shiny_rates"):
+        st.session_state.pop("shiny_rates_df", None)
+        st.rerun()
+
     rates_df = fetch_shiny_rates()
     if rates_df is None:
         st.warning("Could not fetch live shiny rates from shinyrates.com")
