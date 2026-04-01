@@ -16,17 +16,31 @@ IMAGE_URL_TEMPLATE = (
 )
 
 UNTRADEABLE_IDS = {
+    # Confirmed untradeable mythicals in Pokémon GO
     151,   # Mew
     251,   # Celebi
     385,   # Jirachi
     386,   # Deoxys
+    491,   # Darkrai
     492,   # Shaymin
     494,   # Victini
     647,   # Keldeo
     648,   # Meloetta
+    649,   # Genesect
+    719,   # Diancie
     720,   # Hoopa
     802,   # Marshadow
     893,   # Zarude
+    # Confirmed untradeable legendary
+    718,   # Zygarde (obtained via Routes, cannot be traded)
+    # Unreleased mythicals (will be untradeable when released)
+    489,   # Phione
+    490,   # Manaphy
+    493,   # Arceus
+    721,   # Volcanion
+    801,   # Magearna
+    807,   # Zeraora
+    # Note: Meltan (808) and Melmetal (809) are mythical but TRADEABLE
 }
 
 GEN_BOUNDARIES = [

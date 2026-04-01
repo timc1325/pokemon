@@ -28,6 +28,7 @@ FALLBACK_IMAGE = (
 
 FILTER_TAGS = [
     "Released", "Not Released", "Shundo", "Not Shundo", "Lucky", "Not Lucky",
+    "Tradeable", "Untradeable",
 ]
 
 SORT_OPTIONS = [
@@ -175,17 +176,18 @@ def apply_filters(
         ]
 
     mask_map = {
-        "Released": "released",
-        "Not Released": "released",
-        "Shundo": "shundo",
-        "Not Shundo": "shundo",
-        "Lucky": "lucky",
-        "Not Lucky": "lucky",
+        "Released": ("released", False),
+        "Not Released": ("released", True),
+        "Shundo": ("shundo", False),
+        "Not Shundo": ("shundo", True),
+        "Lucky": ("lucky", False),
+        "Not Lucky": ("lucky", True),
+        "Tradeable": ("tradeable", False),
+        "Untradeable": ("tradeable", True),
     }
     for tag in filter_tags:
         if tag in mask_map:
-            col = mask_map[tag]
-            negate = tag.startswith("Not ")
+            col, negate = mask_map[tag]
             filtered = filtered[~filtered[col] if negate else filtered[col]]
 
     if gen_opt != "All":
