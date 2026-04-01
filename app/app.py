@@ -831,10 +831,10 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
 
     lo = f"Standard (n < {thr:,.0f})"
     hi = f"Large sample (n ≥ {thr:,.0f})"
-    hi_np = "n×rate > 1"
+    hi_np = ">1 expected shiny"
     mask_teal = chart_df["sample_size"] >= thr
     mask_np = chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1
-    # Teal first; only if not teal, then fuchsia when n×rate > 1; else standard.
+    # Teal first; fuchsia only if not teal and n×p > 1; else standard.
     chart_df["bar_tier"] = lo
     chart_df.loc[mask_np & ~mask_teal, "bar_tier"] = hi_np
     chart_df.loc[mask_teal, "bar_tier"] = hi
@@ -944,7 +944,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"**Teal**: n ≥ **{thr:,.0f}**. **Fuchsia**: **n × rate > 1** (expected shiny count in the sample)."
+        f"**Teal**: n ≥ **{thr:,.0f}**. **Fuchsia**: **>1 expected shiny** in the sample (when not teal)."
     )
 
 
