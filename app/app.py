@@ -122,10 +122,6 @@ def inject_css():
         background: rgba(124,92,252,0.1) !important;
         border-radius: 4px !important; color: #9080e0 !important;
     }
-    /* Prevent multiselect first tag left-clip from border-radius */
-    [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-        padding-left: 8px !important;
-    }
     label { color: #404058 !important; font-size: 11px !important; }
 
     /* ── Checkbox ── */
@@ -748,8 +744,7 @@ def render_controls():
     c_tags, c_opts = st.columns([3, 1])
     with c_tags:
         filter_tags = st.multiselect(
-            "tags", FILTER_TAGS, default=["Released"],
-            label_visibility="collapsed",
+            "Filter", FILTER_TAGS, default=["Released"],
         )
     with c_opts:
         root_only = st.checkbox("Root only")
