@@ -25,14 +25,14 @@ CARDS_PER_PAGE = 80
 # Live Rates bar chart: best-odds only, short list for readability
 BAR_CHART_MIN_PROB = 1 / 250  # show at least ~1 in 250 or better
 BAR_CHART_TOP_N = 42
-# “Large sample” teal: stricter than top quartile — high quantile + floor on n
+# “Large sample” tier (amber bar): stricter — high quantile + floor on n
 BAR_CHART_LARGE_SAMPLE_Q = 0.90
 BAR_CHART_LARGE_SAMPLE_MIN_N = 8_000
 CHART_BG = "#08080e"
 CHART_GRID = "#ffffff0d"
 CHART_MUTED = "#3d3d52"
-CHART_ACCENT_HI_N = "#5eead4"
-CHART_ACCENT_NP = "#e879f9"  # n×p > 1 (expected # of shinies in sample > 1)
+CHART_ACCENT_HI_N = "#f59e0b"  # large sample (amber)
+CHART_ACCENT_NP = "#60a5fa"  # >1 expected shiny (sky blue)
 
 # jsDelivr serves the same PokeAPI sprite repo with better availability than
 # raw.githubusercontent.com (fewer timeouts / rate limits when loading many images).
@@ -834,7 +834,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     hi_np = ">1 expected shiny"
     mask_teal = chart_df["sample_size"] >= thr
     mask_np = chart_df["sample_size"] * chart_df["shiny_rate_value"] > 1
-    # Teal first; fuchsia only if not teal and n×p > 1; else standard.
+    # Amber (large n) first; sky blue only if not amber and n×p > 1; else standard.
     chart_df["bar_tier"] = lo
     chart_df.loc[mask_np & ~mask_teal, "bar_tier"] = hi_np
     chart_df.loc[mask_teal, "bar_tier"] = hi
@@ -944,7 +944,7 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"**Teal**: n ≥ **{thr:,.0f}**. **Fuchsia**: **>1 expected shiny** in the sample (when not teal)."
+        f"**Amber**: n ≥ **{thr:,.0f}**. **Blue**: **>1 expected shiny** in the sample (when not amber)."
     )
 
 
