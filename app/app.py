@@ -69,15 +69,19 @@ def load_pokemon() -> pd.DataFrame:
 
 
 def load_collection() -> pd.DataFrame:
+    if "collection_df" in st.session_state:
+        return st.session_state["collection_df"]
     try:
         ws = _get_worksheet()
         records = ws.get_all_records()
         if not records:
-            return pd.DataFrame(columns=["pokemon_id", "shundo", "lucky"])
-        df = pd.DataFrame(records)
-        df["pokemon_id"] = df["pokemon_id"].astype(int)
-        for col in ["shundo", "lucky"]:
-            df[col] = df[col].astype(str).str.upper().isin(["TRUE", "1"])
+            df = pd.DataFrame(columns=["pokemon_id", "shundo", "lucky"])
+        else:
+            df = pd.DataFrame(records)
+            df["pokemon_id"] = df["pokemon_id"].astype(int)
+            for col in ["shundo", "lucky"]:
+                df[col] = df[col].astype(str).str.upper().isin(["TRUE", "1"])
+        st.session_state["collection_df"] = df
         return df
     except Exception as e:
         st.error(f"Failed to load collection from Google Sheets: {e}")
@@ -91,6 +95,7 @@ def save_collection(df: pd.DataFrame) -> None:
         header = ["pokemon_id", "shundo", "lucky"]
         rows = df[["pokemon_id", "shundo", "lucky"]].values.tolist()
         ws.update(f"A1:C{len(rows) + 1}", [header] + rows)
+        st.session_state["collection_df"] = df  # update cache
     except Exception as e:
         st.error(f"Failed to save to Google Sheets: {e}")
 

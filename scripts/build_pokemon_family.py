@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-
+# This is how the pokemon_family.csv file is generated
 SPECIES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species.csv"
 DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parents[1] / "app" / "data" / "pokemon_family.csv"
 
