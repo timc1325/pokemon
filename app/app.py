@@ -830,7 +830,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     rv = chart_df["shiny_rate_value"]
     chart_df["one_in"] = (1.0 / rv).where((rv > 0) & rv.notna()).round()
 
-    hi, lo = "Large sample (brighter)", "Standard"
+    lo = f"Standard (n < {thr:,.0f})"
+    hi = f"Large sample (n ≥ {thr:,.0f})"
     chart_df["well_sampled"] = (chart_df["sample_size"] >= thr).map(
         {True: hi, False: lo}
     )
@@ -867,6 +868,10 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     color_scale = alt.Scale(
         domain=[lo, hi],
         range=[CHART_MUTED, CHART_ACCENT_HI_N],
+    )
+    sample_legend_title = (
+        f"Teal = max({BAR_CHART_LARGE_SAMPLE_Q:.0%} quantile here, "
+        f"{BAR_CHART_LARGE_SAMPLE_MIN_N:,} min)"
     )
 
     tooltip = [
@@ -919,7 +924,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
                 scale=color_scale,
                 legend=alt.Legend(
                     orient="top",
-                    title=None,
+                    title=sample_legend_title,
+                    titleColor="#a7a7bf",
                     labelColor="#d8d8e8",
                     symbolType="square",
                 ),
@@ -941,8 +947,8 @@ def _render_shiny_rate_bar_chart(filtered: pd.DataFrame) -> None:
     st.caption(
         f"Sorted **best → worst** shiny chance (top to bottom). Up to **{BAR_CHART_TOP_N}** species "
         f"with rate **≥ 1/{round(1 / BAR_CHART_MIN_PROB)}** after filters (**{len(chart_df)}** shown). "
-        f"**Teal** = heavy sampling: n ≥ **{thr:,.0f}** "
-        f"(max of **{BAR_CHART_LARGE_SAMPLE_Q:.0%}** quantile on this list and **{BAR_CHART_LARGE_SAMPLE_MIN_N:,}**)."
+        f"Legend reflects **n ≥ {thr:,.0f}** for teal (max of **{BAR_CHART_LARGE_SAMPLE_Q:.0%}** "
+        f"quantile on this list and **{BAR_CHART_LARGE_SAMPLE_MIN_N:,}**)."
     )
 
 
