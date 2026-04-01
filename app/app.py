@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.request
 from pathlib import Path
 
@@ -15,6 +16,7 @@ DATA_DIR = Path(__file__).parent / "data"
 POKEMON_PATH = DATA_DIR / "pokemon.csv"
 
 RELEASED_API_URL = "https://pogoapi.net/api/v1/released_pokemon.json"
+SHINY_RATES_URL = "https://shinyrates.com/data/rate"
 
 CARDS_PER_ROW = 8
 CARDS_PER_PAGE = 80
@@ -133,6 +135,52 @@ def fetch_released_ids() -> set[int]:
         return ids
     except Exception:
         return set()
+
+
+def _parse_rate_value(rate_text: str) -> float:
+    normalized = rate_text.strip().lower().replace(" ", "").replace(",", "")
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)", normalized)
+    if m:
+        num, den = float(m.group(1)), float(m.group(2))
+        return num / den if den else 0.0
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)%", normalized)
+    if m:
+        return float(m.group(1)) / 100
+    return 0.0
+
+
+def fetch_shiny_rates() -> pd.DataFrame | None:
+    if "shiny_rates_df" in st.session_state:
+        return st.session_state["shiny_rates_df"]
+    try:
+        req = urllib.request.Request(
+            SHINY_RATES_URL,
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        )
+        resp = urllib.request.urlopen(req, timeout=20)
+        data = json.loads(resp.read())
+        df = pd.DataFrame(data)
+        df["pokemon_id"] = df["id"].astype(int)
+        df["sample_size"] = df["total"].str.replace(",", "", regex=False).astype(int)
+        df["shiny_rate_value"] = df["rate"].map(_parse_rate_value)
+        df = df[["pokemon_id", "rate", "sample_size", "shiny_rate_value"]]
+        st.session_state["shiny_rates_df"] = df
+        return df
+    except Exception:
+        return None
+
+
+def get_shiny_targets(
+    merged: pd.DataFrame, rates_df: pd.DataFrame
+) -> pd.DataFrame:
+    owned_ids = set(merged.loc[merged["shundo"], "pokemon_id"])
+    owned_families = set(merged.loc[merged["pokemon_id"].isin(owned_ids), "family_id"])
+    targets = merged.merge(rates_df, on="pokemon_id", how="inner")
+    targets = targets[~targets["family_id"].isin(owned_families)].copy()
+    targets = targets.sort_values(
+        ["shiny_rate_value", "sample_size"], ascending=[False, False]
+    ).reset_index(drop=True)
+    return targets
 
 
 def merge_data(
@@ -307,6 +355,68 @@ def render_grid(
                     render_card(page_df.iloc[idx], toggle_tag, collection_df)
 
 
+def render_shiny_rates(merged: pd.DataFrame) -> None:
+    rates_df = fetch_shiny_rates()
+    if rates_df is None:
+        st.warning("Could not fetch live shiny rates from shinyrates.com")
+        return
+
+    targets = get_shiny_targets(merged, rates_df)
+    if targets.empty:
+        st.success("You have shundos for every family with live boosted rates!")
+        return
+
+    st.markdown(
+        f'<div style="font-size:13px;padding:4px 0;margin-bottom:8px;">'
+        f'<b>{len(targets)}</b> shiny targets you don\'t have yet, '
+        f'sorted by highest shiny rate'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    for i in range(0, len(targets), CARDS_PER_ROW):
+        cols = st.columns(CARDS_PER_ROW)
+        for j, col in enumerate(cols):
+            idx = i + j
+            if idx < len(targets):
+                row = targets.iloc[idx]
+                with col:
+                    image_url = row.get("image_url", "")
+                    if pd.isna(image_url) or not image_url:
+                        image_url = FALLBACK_IMAGE
+                    rate_str = row["rate"]
+                    sample = row["sample_size"]
+                    rate_val = row["shiny_rate_value"]
+                    if rate_val >= 1 / 100:
+                        rate_color = "#4CAF50"
+                    elif rate_val >= 1 / 300:
+                        rate_color = "#FF9800"
+                    elif rate_val >= 1 / 500:
+                        rate_color = "#2196F3"
+                    else:
+                        rate_color = "#9E9E9E"
+                    st.markdown(
+                        f"""
+                        <div style="border:2px solid {rate_color};border-radius:8px;
+                                    padding:6px;text-align:center;min-height:170px;
+                                    background:#fafafa;">
+                            <img src="{image_url}" width="56" height="56"
+                                 style="object-fit:contain;"
+                                 onerror="this.src='{FALLBACK_IMAGE}'" loading="lazy">
+                            <div style="font-weight:bold;margin-top:3px;font-size:12px;">
+                                {row['name']}</div>
+                            <div style="color:#666;font-size:10px;">#{row['pokemon_id']}</div>
+                            <div style="margin-top:4px;">
+                                {badge(rate_str, rate_color)}
+                            </div>
+                            <div style="color:#999;font-size:9px;margin-top:2px;">
+                                sample: {sample:,}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
@@ -395,41 +505,47 @@ def main():
     collection_df = ensure_collection_complete(pokemon_df, collection_df)
     merged = merge_data(pokemon_df, collection_df)
 
-    search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_sidebar_filters(merged)
-    filtered = apply_filters(merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family)
+    tab_collection, tab_shiny = st.tabs(["📦 Collection", "🔥 Live Shiny Rates"])
 
-    total_pages = max(1, -(-len(filtered) // CARDS_PER_PAGE))
+    with tab_collection:
+        search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_sidebar_filters(merged)
+        filtered = apply_filters(merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family)
 
-    if "page" not in st.session_state:
-        st.session_state.page = 1
-    st.session_state.page = min(st.session_state.page, total_pages)
+        total_pages = max(1, -(-len(filtered) // CARDS_PER_PAGE))
 
-    page_start = (st.session_state.page - 1) * CARDS_PER_PAGE + 1
-    page_end = min(st.session_state.page * CARDS_PER_PAGE, len(filtered))
+        if "page" not in st.session_state:
+            st.session_state.page = 1
+        st.session_state.page = min(st.session_state.page, total_pages)
 
-    col_summary, col_nav = st.columns([3, 2])
-    with col_summary:
-        render_summary(filtered)
-    with col_nav:
-        c1, c2, c3 = st.columns([1, 2, 1])
-        with c1:
-            if st.button("◀", disabled=st.session_state.page <= 1, use_container_width=True):
-                st.session_state.page -= 1
-                st.rerun()
-        with c2:
-            st.markdown(
-                f'<div style="text-align:center;font-size:13px;padding:8px 0;">'
-                f'{page_start}–{page_end} of {len(filtered)} '
-                f'({st.session_state.page}/{total_pages})</div>',
-                unsafe_allow_html=True,
-            )
-        with c3:
-            if st.button("▶", disabled=st.session_state.page >= total_pages, use_container_width=True):
-                st.session_state.page += 1
-                st.rerun()
-    page = st.session_state.page - 1
+        page_start = (st.session_state.page - 1) * CARDS_PER_PAGE + 1
+        page_end = min(st.session_state.page * CARDS_PER_PAGE, len(filtered))
 
-    render_grid(filtered, page, toggle_tag, collection_df)
+        col_summary, col_nav = st.columns([3, 2])
+        with col_summary:
+            render_summary(filtered)
+        with col_nav:
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c1:
+                if st.button("◀", disabled=st.session_state.page <= 1, use_container_width=True):
+                    st.session_state.page -= 1
+                    st.rerun()
+            with c2:
+                st.markdown(
+                    f'<div style="text-align:center;font-size:13px;padding:8px 0;">'
+                    f'{page_start}–{page_end} of {len(filtered)} '
+                    f'({st.session_state.page}/{total_pages})</div>',
+                    unsafe_allow_html=True,
+                )
+            with c3:
+                if st.button("▶", disabled=st.session_state.page >= total_pages, use_container_width=True):
+                    st.session_state.page += 1
+                    st.rerun()
+        page = st.session_state.page - 1
+
+        render_grid(filtered, page, toggle_tag, collection_df)
+
+    with tab_shiny:
+        render_shiny_rates(merged)
 
     render_sidebar_editor(merged, collection_df)
     render_sidebar_export(filtered)
