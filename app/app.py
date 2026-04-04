@@ -82,11 +82,11 @@ def pokemon_img_html(pokemon_id: int) -> str:
 
 FILTER_TAGS = [
     "Released", "Not Released", "Shundo", "Not Shundo", "Lucky", "Not Lucky",
-    "Tradeable", "Untradeable",
+    "Tradeable", "Untradeable", "Legendary", "Not Legendary",
 ]
 
 SORT_OPTIONS = [
-    "Pokédex Order", "Alphabetical", "Shundo First", "Lucky First",
+    "Pokédex Order", "Alphabetical", "Shundo First", "Lucky First", "Legendary First",
 ]
 
 GSHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -673,6 +673,8 @@ def apply_filters(
         "Not Lucky": ("lucky", True),
         "Tradeable": ("tradeable", False),
         "Untradeable": ("tradeable", True),
+        "Legendary": ("legendary", False),
+        "Not Legendary": ("legendary", True),
     }
     for tag in filter_tags:
         if tag in mask_map:
@@ -691,6 +693,7 @@ def apply_filters(
         "Alphabetical": (["name"], [True]),
         "Shundo First": (["shundo", "pokemon_id"], [False, True]),
         "Lucky First": (["lucky", "pokemon_id"], [False, True]),
+        "Legendary First": (["legendary", "pokemon_id"], [False, True]),
     }
     cols, asc = sort_map.get(sort_opt, (["pokemon_id"], [True]))
     filtered = filtered.sort_values(cols, ascending=asc)
@@ -736,6 +739,8 @@ def render_card(
         parts.append(badge("Lucky", "rgba(240,160,48,0.15)", "#ffc060"))
     if not row.get("tradeable", True):
         parts.append(badge("Untradeable", "rgba(255,255,255,0.04)", "#404058"))
+    if row.get("legendary", False):
+        parts.append(badge("Legendary", "rgba(255,215,0,0.12)", "#e0c050"))
 
     badge_html = " ".join(parts)
 
@@ -1022,6 +1027,8 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
         "Not Lucky": ("lucky", True),
         "Tradeable": ("tradeable", False),
         "Untradeable": ("tradeable", True),
+        "Legendary": ("legendary", False),
+        "Not Legendary": ("legendary", True),
     }
     for tag in shiny_filter_tags:
         if tag in mask_map:
