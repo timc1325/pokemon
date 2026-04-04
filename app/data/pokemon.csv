@@ -888,7 +888,7 @@ pokemon_id,name,root_id,root_name,family_id,generation,image_url,tradeable
 887,Dragapult,885.0,Dreepy,466,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/887.png,True
 888,Zacian,888.0,Zacian,467,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/888.png,True
 889,Zamazenta,889.0,Zamazenta,468,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/889.png,True
-890,Eternatus,890.0,Eternatus,469,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/890.png,True
+890,Eternatus,890.0,Eternatus,469,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/890.png,False
 891,Kubfu,891.0,Kubfu,470,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/891.png,True
 892,Urshifu,891.0,Kubfu,470,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/892.png,True
 893,Zarude,893.0,Zarude,471,8,https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/893.png,False
