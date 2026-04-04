@@ -633,6 +633,12 @@ def merge_data(
     df = pokemon_df.merge(collection_df, on="pokemon_id", how="left")
     for col in ["shundo", "lucky"]:
         df[col] = df[col].fillna(False).astype(bool)
+    if "tradeable" not in df.columns:
+        df["tradeable"] = True
+    if "legendary" not in df.columns:
+        df["legendary"] = False
+    df["tradeable"] = df["tradeable"].fillna(True).astype(bool)
+    df["legendary"] = df["legendary"].fillna(False).astype(bool)
     released_ids = fetch_released_ids()
     df["released"] = df["pokemon_id"].isin(released_ids) if released_ids else True
     return df
