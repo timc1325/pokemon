@@ -1046,7 +1046,7 @@ def render_shiny_rates(merged: pd.DataFrame) -> None:
 
 
 def render_controls():
-    c_search, c_gen, c_sort = st.columns([3, 1, 1])
+    c_search, c_gen, c_sort, c_toggle = st.columns([3, 1, 1, 1])
     with c_search:
         search = st.text_input(
             "search", placeholder="Search Pokémon…",
@@ -1057,6 +1057,10 @@ def render_controls():
         gen_opt = st.selectbox("gen", gen_options, label_visibility="collapsed")
     with c_sort:
         sort_opt = st.selectbox("sort", SORT_OPTIONS, label_visibility="collapsed")
+    with c_toggle:
+        toggle_options = ["Toggle: Off", "Toggle: Shundo", "Toggle: Lucky"]
+        toggle_mode = st.selectbox("toggle", toggle_options, label_visibility="collapsed")
+        toggle_tag = None if toggle_mode == "Toggle: Off" else toggle_mode.split(": ")[1].lower()
 
     c_tags, c_opts = st.columns([3, 1])
     with c_tags:
@@ -1067,18 +1071,7 @@ def render_controls():
         root_only = st.checkbox("Root only")
         show_family = st.checkbox("Full family")
 
-    return search, filter_tags, gen_opt, sort_opt, root_only, show_family
-
-
-def render_sidebar_settings():
-    st.sidebar.title("Settings")
-    st.sidebar.subheader("Toggle Mode")
-    toggle_options = ["Off", "Shundo", "Lucky"]
-    toggle_mode = st.sidebar.selectbox(
-        "Click cards to toggle", toggle_options,
-    )
-    toggle_tag = None if toggle_mode == "Off" else toggle_mode.lower()
-    return toggle_tag
+    return search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag
 
 
 def render_sidebar_editor(merged: pd.DataFrame, collection_df: pd.DataFrame):
@@ -1147,7 +1140,6 @@ def main():
     merged = merge_data(pokemon_df, collection_df)
 
     # Sidebar — secondary controls (collapsed by default)
-    toggle_tag = render_sidebar_settings()
     render_sidebar_editor(merged, collection_df)
 
     # Brand header
@@ -1162,7 +1154,7 @@ def main():
     tab_collection, tab_shiny = st.tabs(["Collection", "Live Rates"])
 
     with tab_collection:
-        search, filter_tags, gen_opt, sort_opt, root_only, show_family = render_controls()
+        search, filter_tags, gen_opt, sort_opt, root_only, show_family, toggle_tag = render_controls()
         filtered = apply_filters(
             merged, search, filter_tags, gen_opt, sort_opt, root_only, show_family,
         )
