@@ -504,8 +504,8 @@ def _get_worksheet():
 
 
 @st.cache_data(show_spinner=False)
-def load_pokemon(_csv_mtime: float) -> pd.DataFrame:
-    _ = _csv_mtime  # cache invalidates when pokemon.csv changes on disk
+def load_pokemon(csv_mtime: float) -> pd.DataFrame:
+    _ = csv_mtime  # cache invalidates when pokemon.csv changes on disk
     df = pd.read_csv(POKEMON_PATH)
     expected = {"pokemon_id", "name", "root_id", "root_name", "image_url"}
     missing = expected - set(df.columns)
